@@ -1,0 +1,31 @@
+[package]
+name = "rust_lib_spy_on_your_work"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "staticlib"]
+
+[dependencies.windows]
+version = "0.61.3"
+features = [
+    "Globalization",
+    "Media_Ocr",
+    "Graphics_Imaging",
+    "Storage",
+    "Storage_Streams",
+    "Data_Xml_Dom",
+    "Win32_Graphics_Gdi",
+    "Win32_Security",
+    "Win32_System_Threading",
+    "Win32_System_ProcessStatus",
+    "Win32_UI_WindowsAndMessaging",
+]
+
+[dependencies]
+flutter_rust_bridge = "=2.11.1"
+bytemuck = "1.0"
+anyhow = "1.0.99"
+
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(frb_expand)'] }
