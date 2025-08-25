@@ -369,4 +369,81 @@ mod tests {
             }
         }
     }
+
+    use sysinfo::System;
+    #[test]
+    fn test_start_time() {
+        // 方法1：使用Windows API获取准确的开机时间
+        let (uptime_ms, uptime_seconds) = unsafe {
+            use windows::Win32::System::SystemInformation::GetTickCount64;
+
+            // GetTickCount64 返回系统启动以来的毫秒数
+            let uptime_ms = GetTickCount64();
+            let uptime_seconds = uptime_ms / 1000;
+
+            (uptime_ms, uptime_seconds)
+        };
+
+        println!("系统已运行 {} 秒 ({} 毫秒)", uptime_seconds, uptime_ms);
+
+        // 计算开机时间
+        let boot_time = chrono::Utc::now() - chrono::Duration::milliseconds(uptime_ms as i64);
+        let boot_time_local = boot_time.with_timezone(&chrono::Local);
+
+        println!("开机时间 (UTC): {}", boot_time.format("%Y-%m-%d %H:%M:%S"));
+        println!(
+            "开机时间 (本地): {}",
+            boot_time_local.format("%Y-%m-%d %H:%M:%S")
+        );
+
+        // 方法2：使用sysinfo作为对比
+        let mut sys = sysinfo::System::new_all();
+        sys.refresh_all();
+
+        let sysinfo_uptime = sysinfo::System::uptime();
+        println!("\n=== sysinfo库结果（对比用）===");
+        println!("sysinfo显示运行时间: {} 秒", sysinfo_uptime);
+
+        let sysinfo_boot_time =
+            chrono::Utc::now() - chrono::Duration::seconds(sysinfo_uptime as i64);
+        let sysinfo_boot_time_local = sysinfo_boot_time.with_timezone(&chrono::Local);
+
+        println!(
+            "sysinfo推算开机时间 (UTC): {}",
+            sysinfo_boot_time.format("%Y-%m-%d %H:%M:%S")
+        );
+        println!(
+            "sysinfo推算开机时间 (本地): {}",
+            sysinfo_boot_time_local.format("%Y-%m-%d %H:%M:%S")
+        );
+
+        // 显示两种方法的差异
+        let difference = (sysinfo_uptime as i64) - (uptime_ms / 1000) as i64;
+        println!("\n两种方法的时间差异: {} 秒", difference);
+
+        // 方法3：使用更精确的Windows性能计数器方法
+        unsafe {
+            use windows::Win32::System::Performance::{
+                QueryPerformanceCounter, QueryPerformanceFrequency,
+            };
+
+            let mut frequency = 0i64;
+            let mut counter = 0i64;
+
+            if QueryPerformanceFrequency(&mut frequency).is_ok()
+                && QueryPerformanceCounter(&mut counter).is_ok()
+            {
+                println!("\n=== 高精度计数器信息 ===");
+                println!("计数器频率: {} Hz", frequency);
+                println!("当前计数器值: {}", counter);
+
+                // 注意：QueryPerformanceCounter不能直接用于获取开机时间
+                // 它只能用于高精度时间测量，这里仅作为参考
+            }
+        }
+
+        println!("\n=== 结论 ===");
+        println!("建议使用Windows API (GetTickCount64)方法获取准确的系统运行时间。");
+        println!("如果sysinfo结果差异较大，可能是库的实现问题。");
+    }
 }

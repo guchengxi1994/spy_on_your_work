@@ -38,3 +38,18 @@ target_include_directories(${BINARY_NAME} PRIVATE "${CMAKE_SOURCE_DIR}")
 
 # Run the Flutter tool portions of the build. This must not be removed.
 add_dependencies(${BINARY_NAME} flutter_assemble)
+
+
+get_filename_component(P1 ${CMAKE_CURRENT_BINARY_DIR} DIRECTORY)
+message(STATUS "P1 ==> " ${P1})
+
+string(REPLACE "/build/windows/x64" "" ROOT_DIR ${P1})
+message(STATUS "ROOT_DIR ==> " ${ROOT_DIR})
+
+set(DLL_PATH ${ROOT_DIR}/libisar.dll)
+
+add_custom_target(copy-runtime-files ALL
+  COMMAND ${CMAKE_COMMAND} -E copy ${DLL_PATH} ${P1}/runner/Debug/libisar.dll
+  COMMAND ${CMAKE_COMMAND} -E copy ${DLL_PATH} ${P1}/runner/Release/libisar.dll
+  COMMAND ${CMAKE_COMMAND} -E copy ${DLL_PATH} ${P1}/runner/Profile/libisar.dll
+)
