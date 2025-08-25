@@ -82,14 +82,18 @@ class ApplicationState {
 
   // 获取今日使用的应用数量
   int get todayAppsCount {
-    final today = DateTime.now();
-    return applicationUsages.values
-        .where(
-          (app) =>
-              app.lastUsed.year == today.year &&
-              app.lastUsed.month == today.month &&
-              app.lastUsed.day == today.day,
-        )
-        .length;
+    // 直接返回当前加载的应用数量（因为我们只加载当天的数据）
+    return applicationUsages.length;
+  }
+
+  // 获取统计信息摘要（用于调试）
+  Map<String, dynamic> get debugInfo {
+    return {
+      'isSpyOn': isSpyOn,
+      'currentApp': currentApp,
+      'totalApps': applicationUsages.length,
+      'totalUsageTime': totalUsageTime.toString(),
+      'sessionStartTime': sessionStartTime?.toString(),
+    };
   }
 }
