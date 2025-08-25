@@ -1,16 +1,13 @@
 # spy_on_your_work
 
-A new Flutter project.
+最近闲的，想到什么做什么。
 
-## Getting Started
+这个做一个桌面应用使用时长的统计，然后打算做一个计划管理，集成到这个app里。
 
-This project is a starting point for a Flutter application.
+暂时只有windows版本，因为底下用了rust+windows-rs的组合去获取应用信息，别的平台没适配，也不知道可不可行（主要也就windows上娱乐多 😊）
 
-A few resources to get you started if this is your first Flutter project:
+虽然叫做spy_on_your_work，**但是实际上不联网，也没有任何数据传输**，只是不知道叫什么了😳。
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+
+**这个项目不少代码都是qoder直接生成的，搞得我下一个打算研究智能体了**
