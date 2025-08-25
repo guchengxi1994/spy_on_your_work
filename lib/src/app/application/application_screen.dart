@@ -7,6 +7,395 @@ import 'package:spy_on_your_work/src/app/application/application_notifier.dart';
 import 'package:spy_on_your_work/src/app/application/application_state.dart';
 import 'package:spy_on_your_work/src/common/logger.dart';
 
+/// 图标缓存管理器
+class IconCacheManager {
+  static final Map<String, Uint8List> _cache = {};
+
+  static Uint8List? getDecodedIcon(String? base64Data) {
+    if (base64Data == null) return null;
+
+    // 如果缓存中存在，直接返回
+    if (_cache.containsKey(base64Data)) {
+      return _cache[base64Data];
+    }
+
+    // 解码并缓存
+    try {
+      final decoded = base64Decode(base64Data);
+      _cache[base64Data] = decoded;
+      return decoded;
+    } catch (e) {
+      logger.warning('Failed to decode icon: $e');
+      return null;
+    }
+  }
+
+  static void clearCache() {
+    _cache.clear();
+  }
+
+  static int get cacheSize => _cache.length;
+}
+
+/// 缓存应用图标组件，避免重复解码
+class CachedAppIcon extends StatelessWidget {
+  final String? iconData;
+  final double size;
+  final bool isCurrentApp;
+
+  const CachedAppIcon({
+    super.key,
+    required this.iconData,
+    this.size = 48,
+    this.isCurrentApp = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return RepaintBoundary(
+      child: _IconContainer(
+        iconData: iconData,
+        size: size,
+        isCurrentApp: isCurrentApp,
+      ),
+    );
+  }
+}
+
+/// 内部图标容器组件
+class _IconContainer extends StatefulWidget {
+  final String? iconData;
+  final double size;
+  final bool isCurrentApp;
+
+  const _IconContainer({
+    required this.iconData,
+    required this.size,
+    required this.isCurrentApp,
+  });
+
+  @override
+  State<_IconContainer> createState() => _IconContainerState();
+}
+
+class _IconContainerState extends State<_IconContainer> {
+  Uint8List? _cachedImageData;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadIcon();
+  }
+
+  @override
+  void didUpdateWidget(_IconContainer oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.iconData != widget.iconData) {
+      _loadIcon();
+    }
+  }
+
+  void _loadIcon() {
+    _cachedImageData = IconCacheManager.getDecodedIcon(widget.iconData);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: widget.size,
+      height: widget.size,
+      decoration: BoxDecoration(
+        color: Colors.grey[100],
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: widget.isCurrentApp
+              ? const Color(0xFF6366F1)
+              : Colors.grey[300]!,
+          width: widget.isCurrentApp ? 2 : 1,
+        ),
+      ),
+      child: _cachedImageData != null
+          ? ClipRRect(
+              borderRadius: BorderRadius.circular(10),
+              child: Image.memory(
+                _cachedImageData!,
+                fit: BoxFit.cover,
+                cacheWidth: widget.size.toInt(),
+                cacheHeight: widget.size.toInt(),
+                gaplessPlayback: true, // 避免图片闪烁
+                errorBuilder: (context, error, stackTrace) {
+                  return Icon(Icons.apps, color: Colors.grey[600], size: 24);
+                },
+              ),
+            )
+          : Icon(Icons.apps, color: Colors.grey[600], size: 24),
+    );
+  }
+}
+
+/// 应用列表项组件，减少重建
+class ApplicationListItem extends StatelessWidget {
+  final ApplicationUsage app;
+  final int index;
+  final bool isCurrentApp;
+  final double percentage;
+  final VoidCallback onTap;
+
+  const ApplicationListItem({
+    super.key,
+    required this.app,
+    required this.index,
+    required this.isCurrentApp,
+    required this.percentage,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    // 排名显示
+    String rankIcon = '';
+    Color rankColor = Colors.grey;
+    if (index == 0) {
+      rankIcon = '🥇';
+      rankColor = const Color(0xFFFFD700);
+    } else if (index == 1) {
+      rankIcon = '🥈';
+      rankColor = const Color(0xFFC0C0C0);
+    } else if (index == 2) {
+      rankIcon = '🥉';
+      rankColor = const Color(0xFFCD7F32);
+    } else {
+      rankIcon = '${index + 1}';
+      rankColor = Colors.grey[600]!;
+    }
+
+    return RepaintBoundary(
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          decoration: BoxDecoration(
+            color: isCurrentApp
+                ? const Color(0xFF6366F1).withOpacity(0.05)
+                : Colors.transparent,
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Leading - 应用图标和排名
+              Stack(
+                children: [
+                  CachedAppIcon(iconData: app.icon, isCurrentApp: isCurrentApp),
+                  Positioned(
+                    top: -2,
+                    right: -2,
+                    child: Container(
+                      padding: const EdgeInsets.all(2),
+                      decoration: BoxDecoration(
+                        color: rankColor,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.white, width: 1),
+                      ),
+                      child: Text(
+                        rankIcon,
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                          color: index < 3 ? Colors.white : Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(width: 16),
+              // Content - 应用信息
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Title row - 应用名称和当前标识
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            app.name,
+                            style: const TextStyle(
+                              color: Color(0xFF1F2937),
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        if (isCurrentApp)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF10B981),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: const Text(
+                              '当前',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    // Subtitle - 应用标题
+                    Text(
+                      app.title,
+                      style: TextStyle(color: Colors.grey[600], fontSize: 14),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 8),
+                    // Progress bar - 进度条
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Container(
+                            height: 6,
+                            decoration: BoxDecoration(
+                              color: Colors.grey[200],
+                              borderRadius: BorderRadius.circular(3),
+                            ),
+                            child: Stack(
+                              children: [
+                                FractionallySizedBox(
+                                  widthFactor: percentage,
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      gradient: const LinearGradient(
+                                        colors: [
+                                          Color(0xFF6366F1),
+                                          Color(0xFF8B5CF6),
+                                        ],
+                                      ),
+                                      borderRadius: BorderRadius.circular(3),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          '${(percentage * 100).toStringAsFixed(1)}%',
+                          style: TextStyle(
+                            color: Colors.grey[600],
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    // Info chips - 信息标签
+                    Wrap(
+                      spacing: 8,
+                      children: [
+                        _InfoChip(
+                          icon: Icons.access_time,
+                          text: _formatDuration(app.totalUsage),
+                          color: Colors.blue,
+                        ),
+                        _InfoChip(
+                          icon: Icons.launch,
+                          text: '${app.sessionCount} 次',
+                          color: Colors.green,
+                        ),
+                        _InfoChip(
+                          icon: Icons.schedule,
+                          text: _formatLastUsed(app.lastUsed),
+                          color: Colors.orange,
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  static String _formatDuration(Duration duration) {
+    if (duration.inHours > 0) {
+      return '${duration.inHours}h ${duration.inMinutes % 60}m';
+    } else if (duration.inMinutes > 0) {
+      return '${duration.inMinutes}m';
+    } else {
+      return '${duration.inSeconds}s';
+    }
+  }
+
+  static String _formatLastUsed(DateTime lastUsed) {
+    final now = DateTime.now();
+    final difference = now.difference(lastUsed);
+
+    if (difference.inMinutes < 1) {
+      return '刚刚';
+    } else if (difference.inMinutes < 60) {
+      return '${difference.inMinutes}分钟前';
+    } else if (difference.inHours < 24) {
+      return '${difference.inHours}小时前';
+    } else {
+      return '${difference.inDays}天前';
+    }
+  }
+}
+
+/// 信息标签组件
+class _InfoChip extends StatelessWidget {
+  final IconData icon;
+  final String text;
+  final Color color;
+
+  const _InfoChip({
+    required this.icon,
+    required this.text,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withOpacity(0.3), width: 1),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 12, color: color),
+          const SizedBox(width: 4),
+          Text(
+            text,
+            style: TextStyle(
+              color: color,
+              fontSize: 10,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class ApplicationScreen extends ConsumerStatefulWidget {
   const ApplicationScreen({super.key});
 
@@ -60,6 +449,10 @@ class _ApplicationScreenState extends ConsumerState<ApplicationScreen>
   void dispose() {
     _animationController.dispose();
     _statsAnimationController.dispose();
+    // 清理图标缓存，防止内存泄漏
+    if (IconCacheManager.cacheSize > 100) {
+      IconCacheManager.clearCache();
+    }
     super.dispose();
   }
 
@@ -643,258 +1036,15 @@ class _ApplicationScreenState extends ConsumerState<ApplicationScreen>
               ? (appSeconds / totalSeconds)
               : 0.0;
 
-          // 排名显示
-          String rankIcon = '';
-          Color rankColor = Colors.grey;
-          if (index == 0) {
-            rankIcon = '🥇';
-            rankColor = const Color(0xFFFFD700);
-          } else if (index == 1) {
-            rankIcon = '🥈';
-            rankColor = const Color(0xFFC0C0C0);
-          } else if (index == 2) {
-            rankIcon = '🥉';
-            rankColor = const Color(0xFFCD7F32);
-          } else {
-            rankIcon = '${index + 1}';
-            rankColor = Colors.grey[600]!;
-          }
-
-          return GestureDetector(
+          return ApplicationListItem(
+            key: ValueKey(app.name), // 使用key保持widget稳定性
+            app: app,
+            index: index,
+            isCurrentApp: isCurrentApp,
+            percentage: percentage,
             onTap: () => _showAppDetailDialog(context, app, percentage),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-
-              decoration: BoxDecoration(
-                borderRadius: index == 0
-                    ? BorderRadius.only(
-                        topLeft: Radius.circular(16),
-                        topRight: Radius.circular(16),
-                      )
-                    : index == appState.sortedApplications.length - 1
-                    ? BorderRadius.only(
-                        bottomLeft: Radius.circular(16),
-                        bottomRight: Radius.circular(16),
-                      )
-                    : null,
-                color: isCurrentApp
-                    ? const Color(0xFF6366F1).withOpacity(0.05)
-                    : Colors.transparent,
-              ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Leading - 应用图标和排名
-                  Stack(
-                    children: [
-                      Container(
-                        width: 48,
-                        height: 48,
-                        decoration: BoxDecoration(
-                          color: Colors.grey[100],
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: isCurrentApp
-                                ? const Color(0xFF6366F1)
-                                : Colors.grey[300]!,
-                            width: isCurrentApp ? 2 : 1,
-                          ),
-                        ),
-                        child: app.icon != null
-                            ? ClipRRect(
-                                borderRadius: BorderRadius.circular(10),
-                                child: Image.memory(
-                                  _decodeBase64(app.icon!),
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (context, error, stackTrace) {
-                                    logger.shout(error);
-                                    return Icon(
-                                      Icons.apps,
-                                      color: Colors.grey[600],
-                                      size: 24,
-                                    );
-                                  },
-                                ),
-                              )
-                            : Icon(
-                                Icons.apps,
-                                color: Colors.grey[600],
-                                size: 24,
-                              ),
-                      ),
-                      Positioned(
-                        top: -2,
-                        right: -2,
-                        child: Container(
-                          padding: const EdgeInsets.all(2),
-                          decoration: BoxDecoration(
-                            color: rankColor,
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: Colors.white, width: 1),
-                          ),
-                          child: Text(
-                            rankIcon,
-                            style: TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
-                              color: index < 3 ? Colors.white : Colors.white,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(width: 16),
-                  // Content - 应用信息
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Title row - 应用名称和当前标识
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Text(
-                                app.name,
-                                style: const TextStyle(
-                                  color: Color(0xFF1F2937),
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                            if (isCurrentApp)
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 4,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFF10B981),
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: const Text(
-                                  '当前',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                          ],
-                        ),
-                        const SizedBox(height: 4),
-                        // Subtitle - 应用标题
-                        Text(
-                          app.title,
-                          style: TextStyle(
-                            color: Colors.grey[600],
-                            fontSize: 14,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 8),
-                        // Progress bar - 进度条
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Container(
-                                height: 6,
-                                decoration: BoxDecoration(
-                                  color: Colors.grey[200],
-                                  borderRadius: BorderRadius.circular(3),
-                                ),
-                                child: Stack(
-                                  children: [
-                                    FractionallySizedBox(
-                                      widthFactor: percentage,
-                                      child: Container(
-                                        decoration: BoxDecoration(
-                                          gradient: const LinearGradient(
-                                            colors: [
-                                              Color(0xFF6366F1),
-                                              Color(0xFF8B5CF6),
-                                            ],
-                                          ),
-                                          borderRadius: BorderRadius.circular(
-                                            3,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              '${(percentage * 100).toStringAsFixed(1)}%',
-                              style: TextStyle(
-                                color: Colors.grey[600],
-                                fontSize: 12,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        // Info chips - 信息标签
-                        Wrap(
-                          spacing: 8,
-                          children: [
-                            _buildInfoChip(
-                              Icons.access_time,
-                              _formatDuration(app.totalUsage),
-                              Colors.blue,
-                            ),
-                            _buildInfoChip(
-                              Icons.launch,
-                              '${app.sessionCount} 次',
-                              Colors.green,
-                            ),
-                            _buildInfoChip(
-                              Icons.schedule,
-                              _formatLastUsed(app.lastUsed),
-                              Colors.orange,
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
           );
         },
-      ),
-    );
-  }
-
-  Widget _buildInfoChip(IconData icon, String text, Color color) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withOpacity(0.3), width: 1),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 12, color: color),
-          const SizedBox(width: 4),
-          Text(
-            text,
-            style: TextStyle(
-              color: color,
-              fontSize: 10,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ],
       ),
     );
   }
@@ -911,31 +1061,7 @@ class _ApplicationScreenState extends ConsumerState<ApplicationScreen>
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Row(
           children: [
-            Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                color: Colors.grey[100],
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.grey[300]!),
-              ),
-              child: app.icon != null
-                  ? ClipRRect(
-                      borderRadius: BorderRadius.circular(10),
-                      child: Image.memory(
-                        _decodeBase64(app.icon!),
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return Icon(
-                            Icons.apps,
-                            color: Colors.grey[600],
-                            size: 24,
-                          );
-                        },
-                      ),
-                    )
-                  : Icon(Icons.apps, color: Colors.grey[600], size: 24),
-            ),
+            CachedAppIcon(iconData: app.icon, size: 48),
             const SizedBox(width: 16),
             Expanded(
               child: Column(
@@ -1035,14 +1161,6 @@ class _ApplicationScreenState extends ConsumerState<ApplicationScreen>
       return '${difference.inMinutes}分钟前';
     } else {
       return '刚刚';
-    }
-  }
-
-  Uint8List _decodeBase64(String base64String) {
-    try {
-      return base64Decode(base64String);
-    } catch (e) {
-      return Uint8List(0);
     }
   }
 }
