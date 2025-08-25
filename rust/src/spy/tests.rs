@@ -1,6 +1,7 @@
 #[allow(unused_imports)]
 #[allow(dead_code)]
 #[allow(unused_variables)]
+#[cfg(target_os = "windows")]
 mod tests {
     use std::ffi::c_void;
     use std::ffi::OsString;
@@ -56,6 +57,18 @@ mod tests {
                     .to_string_lossy()
                     .into_owned();
                 println!("进程路径: {}", exe_path);
+
+                // 从路径中提取程序名称（包含扩展名）
+                if let Some(program_name_with_ext) = std::path::Path::new(&exe_path).file_name() {
+                    let program_name_with_ext = program_name_with_ext.to_string_lossy();
+                    println!("程序名称（含扩展名）: {}", program_name_with_ext);
+
+                    // 提取不含扩展名的程序名称
+                    if let Some(program_name) = std::path::Path::new(&exe_path).file_stem() {
+                        let program_name = program_name.to_string_lossy();
+                        println!("程序名称（不含扩展名）: {}", program_name);
+                    }
+                }
             }
 
             // 5. 获取应用图标
@@ -146,6 +159,8 @@ mod tests {
 
     #[test]
     fn test_save_frontend_window_screenshot() {
+        use crate::spy::platform::WindowCapture;
+
         unsafe {
             let hwnd: HWND = GetForegroundWindow();
             if hwnd.0 == std::ptr::null_mut() {
@@ -153,80 +168,15 @@ mod tests {
                 return;
             }
 
-            // 获取窗口标题用于调试
-            let mut title_buf = [0u16; 512];
-            let title_len = GetWindowTextW(hwnd, &mut title_buf);
-            let title = OsString::from_wide(&title_buf[..title_len as usize])
-                .to_string_lossy()
-                .into_owned();
-            println!("正在截图窗口: {}", title);
-
-            let mut rect = RECT::default();
-            if GetWindowRect(hwnd, &mut rect).is_err() {
-                println!("无法获取窗口矩形");
-                return;
+            // 使用专门的WindowCapture进行截图
+            match WindowCapture::capture_window(hwnd, "./screenshots") {
+                Ok(file_path) => {
+                    println!("截图测试成功！文件保存在: {}", file_path);
+                }
+                Err(error) => {
+                    println!("截图测试失败: {}", error);
+                }
             }
-
-            let width = rect.right - rect.left;
-            let height = rect.bottom - rect.top;
-            println!("窗口尺寸: {}x{}", width, height);
-
-            if width <= 0 || height <= 0 {
-                println!("窗口尺寸无效");
-                return;
-            }
-
-            // 方法1：尝试使用PrintWindow（推荐方法）
-            let hdc_window = GetWindowDC(Some(hwnd));
-            let hdc_mem = CreateCompatibleDC(Some(hdc_window));
-            let hbitmap = CreateCompatibleBitmap(hdc_window, width, height);
-            let old_bitmap = SelectObject(hdc_mem, hbitmap.into());
-
-            // 先填充白色背景，避免黑色
-            let white_brush = CreateSolidBrush(windows::Win32::Foundation::COLORREF(0x00FFFFFF));
-            let rect_fill = RECT {
-                left: 0,
-                top: 0,
-                right: width,
-                bottom: height,
-            };
-            FillRect(hdc_mem, &rect_fill, white_brush);
-            let _ = DeleteObject(white_brush.into());
-
-            // 使用屏幕DC进行截图（更可靠的方法）
-            let hdc_screen = GetDC(None);
-            let screen_x = rect.left;
-            let screen_y = rect.top;
-
-            let blt_result = BitBlt(
-                hdc_mem,
-                0,
-                0,
-                width,
-                height,
-                Some(hdc_screen),
-                screen_x,
-                screen_y,
-                SRCCOPY,
-            );
-
-            ReleaseDC(None, hdc_screen);
-
-            if blt_result.is_err() {
-                println!("BitBlt失败");
-            } else {
-                println!("截图成功");
-            }
-
-            // 保存为 BMP
-            save_bitmap(hbitmap, width, height, "screenshot.bmp");
-            println!("截图已保存为 screenshot.bmp");
-
-            // 清理资源
-            SelectObject(hdc_mem, old_bitmap);
-            ReleaseDC(Some(hwnd), hdc_window);
-            let _ = DeleteDC(hdc_mem);
-            let _ = DeleteObject(hbitmap.into());
         }
     }
 
@@ -374,5 +324,49 @@ mod tests {
         }
 
         anyhow::Ok(())
+    }
+
+    #[test]
+    fn test_application_provider() {
+        use crate::spy::model::{Application, ApplicationProvider};
+
+        unsafe {
+            // 获取前台窗口
+            let hwnd = GetForegroundWindow();
+            if hwnd.0 != std::ptr::null_mut() {
+                // 使用ApplicationProvider创建Application实例
+                if let Some(app) = Application::from_process(hwnd) {
+                    println!("=== ApplicationProvider 测试结果 ===");
+                    println!("应用名称: {}", app.name);
+                    println!("应用路径: {}", app.path);
+
+                    // 测试图标获取
+                    match &app.icon {
+                        Some(icon_base64) => {
+                            println!("图标获取成功！");
+                            println!("图标base64长度: {} 字节", icon_base64.len());
+                            if icon_base64.len() > 100 {
+                                println!("图标base64前100字符: {}...", &icon_base64[..100]);
+                            } else {
+                                println!("图标base64: {}", icon_base64);
+                            }
+                            println!("可以将此base64字符串保存到数据库中。");
+                        }
+                        None => println!("未获取到图标（这是正常情况，某些应用可能没有图标）"),
+                    }
+
+                    // 从路径提取程序名
+                    if !app.path.is_empty() {
+                        if let Some(program_name) = std::path::Path::new(&app.path).file_stem() {
+                            println!("程序名: {}", program_name.to_string_lossy());
+                        }
+                    }
+                } else {
+                    println!("无法从前台窗口创建Application实例");
+                }
+            } else {
+                println!("没有找到前台窗口");
+            }
+        }
     }
 }

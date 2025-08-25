@@ -6,6 +6,8 @@ edition = "2021"
 [lib]
 crate-type = ["cdylib", "staticlib"]
 
+# 仅 Windows 需要的依赖
+[target.'cfg(target_os = "windows")'.dependencies]
 [dependencies.windows]
 version = "0.61.3"
 features = [
@@ -23,9 +25,10 @@ features = [
 ]
 
 [dependencies]
-flutter_rust_bridge = "=2.11.1"
-bytemuck = "1.0"
 anyhow = "1.0.99"
+base64 = "0.21"
+bytemuck = "1.0"
+flutter_rust_bridge = "=2.11.1"
 
 [lints.rust]
 unexpected_cfgs = { level = "warn", check-cfg = ['cfg(frb_expand)'] }
