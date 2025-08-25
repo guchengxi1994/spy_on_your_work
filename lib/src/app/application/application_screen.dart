@@ -199,58 +199,61 @@ class _ApplicationScreenState extends ConsumerState<ApplicationScreen>
 
   /// 构建统计切换按钮
   Widget _buildStatsToggleButton(bool isNarrowScreen) {
-    return AnimatedPositioned(
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeInOut,
-      // 窄屏时：未弹出在右上角，弹出后贴着面板底部
-      top: isNarrowScreen
-          ? (_isStatsExpanded ? 200 - 24 : 10) // 弹出时贴着面板底部
-          : (MediaQuery.of(context).size.height - 300) / 2 + 126,
-      bottom: null,
-      // 宽屏时：未弹出在右侧，弹出后贴着面板左侧
-      left: !isNarrowScreen && _isStatsExpanded
-          ? MediaQuery.of(context).size.width -
-                320 -
-                24 // 贴着面板左侧
-          : null,
-      right: (!isNarrowScreen && _isStatsExpanded) ? null : 10,
-      child: GestureDetector(
-        onTap: _toggleStatsPanel,
-        child: Container(
-          width: 48,
-          height: 48,
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            // 根据弹出方向调整圆角
-            borderRadius: _isStatsExpanded && !isNarrowScreen
-                ? const BorderRadius.only(
-                    topLeft: Radius.circular(24),
-                    bottomLeft: Radius.circular(24),
-                    topRight: Radius.circular(8),
-                    bottomRight: Radius.circular(8),
-                  )
-                : BorderRadius.circular(24),
-            boxShadow: [
-              BoxShadow(
-                color: const Color(0xFF6366F1).withOpacity(0.3),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
+    return AnimatedBuilder(
+      animation: _statsSlideAnimation,
+      builder: (context, child) {
+        return Positioned(
+          // 窄屏时：跟随面板动画从顶部向下移动
+          top: isNarrowScreen
+              ? (10 + (200 - 34) * _statsSlideAnimation.value) // 从顶部跟随面板向下移动
+              : (MediaQuery.of(context).size.height - 300) / 2 + 126,
+          bottom: null,
+          // 宽屏时：跟随面板动画从右侧向左移动
+          left: !isNarrowScreen
+              ? (MediaQuery.of(context).size.width -
+                    320 * _statsSlideAnimation.value -
+                    24) // 跟随面板滑动
+              : null,
+          right: isNarrowScreen ? 10 : null,
+          child: GestureDetector(
+            onTap: _toggleStatsPanel,
+            child: Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                // 根据弹出方向调整圆角
+                borderRadius: _isStatsExpanded && !isNarrowScreen
+                    ? const BorderRadius.only(
+                        topLeft: Radius.circular(24),
+                        bottomLeft: Radius.circular(24),
+                        topRight: Radius.circular(8),
+                        bottomRight: Radius.circular(8),
+                      )
+                    : BorderRadius.circular(24),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF6366F1).withOpacity(0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
               ),
-            ],
+              child: Icon(
+                _isStatsExpanded
+                    ? Icons.close
+                    : (isNarrowScreen ? Icons.expand_more : Icons.chevron_left),
+                color: Colors.white,
+                size: 24,
+              ),
+            ),
           ),
-          child: Icon(
-            _isStatsExpanded
-                ? Icons.close
-                : (isNarrowScreen ? Icons.expand_more : Icons.chevron_left),
-            color: Colors.white,
-            size: 24,
-          ),
-        ),
-      ),
+        );
+      },
     );
   }
 
