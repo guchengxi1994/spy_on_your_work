@@ -66,6 +66,15 @@ class _ApplicationScreenState extends ConsumerState<ApplicationScreen>
                   const SizedBox(height: 24),
                   _buildStatsCards(appState),
                   const SizedBox(height: 32),
+                  const Text(
+                    '所有应用',
+                    style: TextStyle(
+                      color: Color(0xFF1F2937),
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
                   Expanded(child: _buildApplicationsList(appState)),
                 ],
               ),
@@ -275,240 +284,260 @@ class _ApplicationScreenState extends ConsumerState<ApplicationScreen>
       return const SizedBox();
     }
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          '所有应用',
-          style: TextStyle(
-            color: Color(0xFF1F2937),
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        const SizedBox(height: 16),
-        Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: const Color(0xFFE5E7EB), width: 1),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.05),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: ListView.separated(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: appState.sortedApplications.length,
-            separatorBuilder: (context, index) =>
-                Divider(height: 1, color: Colors.grey[200], indent: 80),
-            itemBuilder: (context, index) {
-              final app = appState.sortedApplications[index];
-              final isCurrentApp = appState.currentApp == app.name;
-              final totalSeconds = appState.totalUsageTime.inSeconds;
-              final appSeconds = app.totalUsage.inSeconds;
-              final percentage = totalSeconds > 0
-                  ? (appSeconds / totalSeconds)
-                  : 0.0;
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE5E7EB), width: 1),
+        // boxShadow: [
+        //   BoxShadow(
+        //     color: Colors.black.withOpacity(0.05),
+        //     blurRadius: 10,
+        //     offset: const Offset(0, 4),
+        //   ),
+        // ],
+      ),
+      child: ListView.separated(
+        padding: EdgeInsets.zero,
+        itemCount: appState.sortedApplications.length,
+        separatorBuilder: (context, index) =>
+            Divider(height: 1, color: Colors.grey[200], indent: 80),
+        itemBuilder: (context, index) {
+          final app = appState.sortedApplications[index];
+          final isCurrentApp = appState.currentApp == app.name;
+          final totalSeconds = appState.totalUsageTime.inSeconds;
+          final appSeconds = app.totalUsage.inSeconds;
+          final percentage = totalSeconds > 0
+              ? (appSeconds / totalSeconds)
+              : 0.0;
 
-              // 排名显示
-              String rankIcon = '';
-              Color rankColor = Colors.grey;
-              if (index == 0) {
-                rankIcon = '🥇';
-                rankColor = const Color(0xFFFFD700);
-              } else if (index == 1) {
-                rankIcon = '🥈';
-                rankColor = const Color(0xFFC0C0C0);
-              } else if (index == 2) {
-                rankIcon = '🥉';
-                rankColor = const Color(0xFFCD7F32);
-              } else {
-                rankIcon = '${index + 1}';
-                rankColor = Colors.grey[600]!;
-              }
+          // 排名显示
+          String rankIcon = '';
+          Color rankColor = Colors.grey;
+          if (index == 0) {
+            rankIcon = '🥇';
+            rankColor = const Color(0xFFFFD700);
+          } else if (index == 1) {
+            rankIcon = '🥈';
+            rankColor = const Color(0xFFC0C0C0);
+          } else if (index == 2) {
+            rankIcon = '🥉';
+            rankColor = const Color(0xFFCD7F32);
+          } else {
+            rankIcon = '${index + 1}';
+            rankColor = Colors.grey[600]!;
+          }
 
-              return ListTile(
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 8,
-                ),
-                tileColor: isCurrentApp
+          return GestureDetector(
+            onTap: () => _showAppDetailDialog(context, app, percentage),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+
+              decoration: BoxDecoration(
+                borderRadius: index == 0
+                    ? BorderRadius.only(
+                        topLeft: Radius.circular(16),
+                        topRight: Radius.circular(16),
+                      )
+                    : index == appState.sortedApplications.length - 1
+                    ? BorderRadius.only(
+                        bottomLeft: Radius.circular(16),
+                        bottomRight: Radius.circular(16),
+                      )
+                    : null,
+                color: isCurrentApp
                     ? const Color(0xFF6366F1).withOpacity(0.05)
                     : Colors.transparent,
-                leading: Stack(
-                  children: [
-                    Container(
-                      width: 48,
-                      height: 48,
-                      decoration: BoxDecoration(
-                        color: Colors.grey[100],
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: isCurrentApp
-                              ? const Color(0xFF6366F1)
-                              : Colors.grey[300]!,
-                          width: isCurrentApp ? 2 : 1,
-                        ),
-                      ),
-                      child: app.icon != null
-                          ? ClipRRect(
-                              borderRadius: BorderRadius.circular(10),
-                              child: Image.memory(
-                                _decodeBase64(app.icon!),
-                                fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) {
-                                  logger.shout(error);
-                                  return Icon(
-                                    Icons.apps,
-                                    color: Colors.grey[600],
-                                    size: 24,
-                                  );
-                                },
-                              ),
-                            )
-                          : Icon(Icons.apps, color: Colors.grey[600], size: 24),
-                    ),
-                    Positioned(
-                      top: -2,
-                      right: -2,
-                      child: Container(
-                        padding: const EdgeInsets.all(2),
-                        decoration: BoxDecoration(
-                          color: rankColor,
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: Colors.white, width: 1),
-                        ),
-                        child: Text(
-                          rankIcon,
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                            color: index < 3 ? Colors.white : Colors.white,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                title: Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        app.name,
-                        style: TextStyle(
-                          color: const Color(0xFF1F2937),
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    if (isCurrentApp)
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Leading - 应用图标和排名
+                  Stack(
+                    children: [
                       Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
+                        width: 48,
+                        height: 48,
                         decoration: BoxDecoration(
-                          color: const Color(0xFF10B981),
+                          color: Colors.grey[100],
                           borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: isCurrentApp
+                                ? const Color(0xFF6366F1)
+                                : Colors.grey[300]!,
+                            width: isCurrentApp ? 2 : 1,
+                          ),
                         ),
-                        child: const Text(
-                          '当前',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
+                        child: app.icon != null
+                            ? ClipRRect(
+                                borderRadius: BorderRadius.circular(10),
+                                child: Image.memory(
+                                  _decodeBase64(app.icon!),
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    logger.shout(error);
+                                    return Icon(
+                                      Icons.apps,
+                                      color: Colors.grey[600],
+                                      size: 24,
+                                    );
+                                  },
+                                ),
+                              )
+                            : Icon(
+                                Icons.apps,
+                                color: Colors.grey[600],
+                                size: 24,
+                              ),
+                      ),
+                      Positioned(
+                        top: -2,
+                        right: -2,
+                        child: Container(
+                          padding: const EdgeInsets.all(2),
+                          decoration: BoxDecoration(
+                            color: rankColor,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: Colors.white, width: 1),
+                          ),
+                          child: Text(
+                            rankIcon,
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                              color: index < 3 ? Colors.white : Colors.white,
+                            ),
                           ),
                         ),
                       ),
-                  ],
-                ),
-                subtitle: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SizedBox(height: 4),
-                    Text(
-                      app.title,
-                      style: TextStyle(color: Colors.grey[600], fontSize: 14),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 8),
-                    // 进度条
-                    Row(
+                    ],
+                  ),
+                  const SizedBox(width: 16),
+                  // Content - 应用信息
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Expanded(
-                          child: Container(
-                            height: 6,
-                            decoration: BoxDecoration(
-                              color: Colors.grey[200],
-                              borderRadius: BorderRadius.circular(3),
+                        // Title row - 应用名称和当前标识
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                app.name,
+                                style: const TextStyle(
+                                  color: Color(0xFF1F2937),
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
                             ),
-                            child: Stack(
-                              children: [
-                                FractionallySizedBox(
-                                  widthFactor: percentage,
-                                  child: Container(
-                                    decoration: BoxDecoration(
-                                      gradient: LinearGradient(
-                                        colors: [
-                                          const Color(0xFF6366F1),
-                                          const Color(0xFF8B5CF6),
-                                        ],
-                                      ),
-                                      borderRadius: BorderRadius.circular(3),
-                                    ),
+                            if (isCurrentApp)
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF10B981),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: const Text(
+                                  '当前',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
                                   ),
                                 ),
-                              ],
-                            ),
-                          ),
+                              ),
+                          ],
                         ),
-                        const SizedBox(width: 8),
+                        const SizedBox(height: 4),
+                        // Subtitle - 应用标题
                         Text(
-                          '${(percentage * 100).toStringAsFixed(1)}%',
+                          app.title,
                           style: TextStyle(
                             color: Colors.grey[600],
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
+                            fontSize: 14,
                           ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 8),
+                        // Progress bar - 进度条
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Container(
+                                height: 6,
+                                decoration: BoxDecoration(
+                                  color: Colors.grey[200],
+                                  borderRadius: BorderRadius.circular(3),
+                                ),
+                                child: Stack(
+                                  children: [
+                                    FractionallySizedBox(
+                                      widthFactor: percentage,
+                                      child: Container(
+                                        decoration: BoxDecoration(
+                                          gradient: const LinearGradient(
+                                            colors: [
+                                              Color(0xFF6366F1),
+                                              Color(0xFF8B5CF6),
+                                            ],
+                                          ),
+                                          borderRadius: BorderRadius.circular(
+                                            3,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              '${(percentage * 100).toStringAsFixed(1)}%',
+                              style: TextStyle(
+                                color: Colors.grey[600],
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        // Info chips - 信息标签
+                        Wrap(
+                          spacing: 8,
+                          children: [
+                            _buildInfoChip(
+                              Icons.access_time,
+                              _formatDuration(app.totalUsage),
+                              Colors.blue,
+                            ),
+                            _buildInfoChip(
+                              Icons.launch,
+                              '${app.sessionCount} 次',
+                              Colors.green,
+                            ),
+                            _buildInfoChip(
+                              Icons.schedule,
+                              _formatLastUsed(app.lastUsed),
+                              Colors.orange,
+                            ),
+                          ],
                         ),
                       ],
                     ),
-                    const SizedBox(height: 8),
-                    Wrap(
-                      spacing: 8,
-                      children: [
-                        _buildInfoChip(
-                          Icons.access_time,
-                          _formatDuration(app.totalUsage),
-                          Colors.blue,
-                        ),
-                        _buildInfoChip(
-                          Icons.launch,
-                          '${app.sessionCount} 次',
-                          Colors.green,
-                        ),
-                        _buildInfoChip(
-                          Icons.schedule,
-                          _formatLastUsed(app.lastUsed),
-                          Colors.orange,
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-                onTap: () => _showAppDetailDialog(context, app, percentage),
-              );
-            },
-          ),
-        ),
-      ],
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
     );
   }
 
