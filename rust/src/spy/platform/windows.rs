@@ -225,19 +225,29 @@ impl Application {
     }
 
     /// 将BGRA像素数据转换为PNG字节数组
-    fn bgra_to_png(bgra_data: Vec<u8>, _width: u32, _height: u32) -> Option<Vec<u8>> {
-        // 将BGRA转换为RGBA
-        let mut rgba_data = Vec::with_capacity(bgra_data.len());
-        for chunk in bgra_data.chunks_exact(4) {
-            rgba_data.push(chunk[2]); // R
-            rgba_data.push(chunk[1]); // G
-            rgba_data.push(chunk[0]); // B
-            rgba_data.push(chunk[3]); // A
+    fn bgra_to_png(bgra: Vec<u8>, width: u32, height: u32) -> Option<Vec<u8>> {
+        use image::{ImageBuffer, Rgba};
+        use std::io::Cursor;
+
+        // BGRA 转 RGBA
+        let mut rgba = Vec::with_capacity(bgra.len());
+        for chunk in bgra.chunks(4) {
+            rgba.push(chunk[2]); // R
+            rgba.push(chunk[1]); // G
+            rgba.push(chunk[0]); // B
+            rgba.push(chunk[3]); // A
         }
 
-        // 使用简单的PNG编码，这里我们返回原始RGBA数据
-        // 在实际项目中，您可能想要使用png crate来生成真正的PNG
-        Some(rgba_data)
+        // 创建 ImageBuffer
+        let img: ImageBuffer<Rgba<u8>, _> = ImageBuffer::from_raw(width, height, rgba)?;
+
+        // 写入 PNG 到内存
+        let mut buf = Cursor::new(Vec::new());
+        if img.write_to(&mut buf, image::ImageFormat::Png).is_ok() {
+            Some(buf.into_inner())
+        } else {
+            None
+        }
     }
 
     /// 从窗口标题提取应用名称的辅助方法

@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:isar_community/isar.dart';
 import 'package:spy_on_your_work/src/app/application/application_state.dart';
@@ -14,6 +13,8 @@ class ApplicationNotifier extends Notifier<ApplicationState> {
 
   @override
   ApplicationState build() {
+    // TODO: 根据数据库获取今天已经使用过的App情况
+
     // 监听应用信息流
     api.applicationInfoStream().listen((event) async {
       logger.info(
@@ -21,19 +22,19 @@ class ApplicationNotifier extends Notifier<ApplicationState> {
       );
       _handleAppSwitch(event);
       // 查询应用信息，如果没有存储到数据库，则存储
-      final appinfo = await database.isar!.iApplications
+      var appinfo = await database.isar!.iApplications
           .filter()
           .nameEqualTo(event.name)
           .pathEqualTo(event.path)
           .findFirst();
       if (appinfo == null) {
+        appinfo = IApplication()
+          ..name = event.name
+          ..path = event.path
+          ..icon = event.icon;
         await database.isar!.writeTxn(() async {
-          await database.isar!.iApplications.put(
-            IApplication()
-              ..name = event.name
-              ..path = event.path
-              ..icon = event.icon,
-          );
+          int appid = await database.isar!.iApplications.put(appinfo!);
+          appinfo.id = appid;
         });
       }
       // 将数据存储到 AppRecord 数据库中
@@ -41,6 +42,7 @@ class ApplicationNotifier extends Notifier<ApplicationState> {
         final now = DateTime.now();
         await database.isar!.appRecords.put(
           AppRecord()
+            ..title = event.title
             ..appId = appinfo!.id
             ..day = now.day
             ..hour = now.hour

@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:spy_on_your_work/src/app/application/application_notifier.dart';
 import 'package:spy_on_your_work/src/app/application/application_state.dart';
+import 'package:spy_on_your_work/src/common/logger.dart';
 
 class ApplicationScreen extends ConsumerStatefulWidget {
   const ApplicationScreen({super.key});
@@ -49,19 +50,23 @@ class _ApplicationScreenState extends ConsumerState<ApplicationScreen>
         child: Stack(
           children: [
             // 主要内容
-            SingleChildScrollView(
+            Container(
               padding: const EdgeInsets.all(10.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // const SizedBox(height: 60), // 为顶部标题留空间
-                  _buildHeader(appState, notifier),
+                  const Text(
+                    '概览',
+                    style: TextStyle(
+                      color: Color(0xFF1F2937),
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                   const SizedBox(height: 24),
                   _buildStatsCards(appState),
                   const SizedBox(height: 32),
-                  _buildChartsSection(appState),
-                  const SizedBox(height: 32),
-                  _buildApplicationsList(appState),
+                  Expanded(child: _buildApplicationsList(appState)),
                 ],
               ),
             ),
@@ -73,49 +78,6 @@ class _ApplicationScreenState extends ConsumerState<ApplicationScreen>
     );
   }
 
-  Widget _buildHeader(ApplicationState appState, ApplicationNotifier notifier) {
-    return Row(
-      children: [
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                '应用监控中心',
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF1F2937),
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                '监控您的应用使用情况',
-                style: TextStyle(fontSize: 16, color: Colors.grey[600]),
-              ),
-            ],
-          ),
-        ),
-        if (appState.isSpyOn) ...[
-          _buildControlButton(appState, notifier),
-          const SizedBox(width: 16),
-          IconButton(
-            onPressed: () => notifier.clearStatistics(),
-            icon: Icon(Icons.clear_all, color: Colors.grey[600]),
-            tooltip: '清除数据',
-            style: IconButton.styleFrom(
-              backgroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-                side: BorderSide(color: Colors.grey[300]!),
-              ),
-            ),
-          ),
-        ],
-      ],
-    );
-  }
-
   Widget _buildStartOverlay(
     ApplicationState appState,
     ApplicationNotifier notifier,
@@ -124,7 +86,7 @@ class _ApplicationScreenState extends ConsumerState<ApplicationScreen>
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
         child: Container(
-          color: Colors.white.withOpacity(0.8),
+          color: Colors.white.withOpacity(0.3),
           child: Center(
             child: Container(
               padding: const EdgeInsets.all(32),
@@ -209,35 +171,6 @@ class _ApplicationScreenState extends ConsumerState<ApplicationScreen>
             ),
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildControlButton(
-    ApplicationState appState,
-    ApplicationNotifier notifier,
-  ) {
-    return ElevatedButton(
-      onPressed: appState.isSpyOn ? notifier.stopSpy : notifier.startSpy,
-      style: ElevatedButton.styleFrom(
-        backgroundColor: appState.isSpyOn ? Colors.red[50] : Colors.green[50],
-        foregroundColor: appState.isSpyOn ? Colors.red[700] : Colors.green[700],
-        side: BorderSide(
-          color: appState.isSpyOn ? Colors.red[200]! : Colors.green[200]!,
-        ),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        elevation: 0,
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(appState.isSpyOn ? Icons.stop : Icons.play_arrow, size: 20),
-          const SizedBox(width: 8),
-          Text(
-            appState.isSpyOn ? '停止' : '开始',
-            style: const TextStyle(fontWeight: FontWeight.bold),
-          ),
-        ],
       ),
     );
   }
@@ -336,225 +269,9 @@ class _ApplicationScreenState extends ConsumerState<ApplicationScreen>
     );
   }
 
-  Widget _buildChartsSection(ApplicationState appState) {
-    if (appState.applicationUsages.isEmpty) {
-      return _buildEmptyState();
-    }
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          '使用统计',
-          style: TextStyle(
-            color: Color(0xFF1F2937),
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        const SizedBox(height: 16),
-        Row(
-          children: [
-            Expanded(flex: 2, child: _buildSimpleChart(appState)),
-            const SizedBox(width: 24),
-            Expanded(child: _buildTopApps(appState)),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildSimpleChart(ApplicationState appState) {
-    final sortedApps = appState.sortedApplications.take(6).toList();
-    final colors = [
-      const Color(0xFF6366F1),
-      const Color(0xFF8B5CF6),
-      const Color(0xFFEC4899),
-      const Color(0xFFEF4444),
-      const Color(0xFFF59E0B),
-      const Color(0xFF10B981),
-    ];
-
-    return Container(
-      height: 300,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE5E7EB), width: 1),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          const Text(
-            '应用使用分布',
-            style: TextStyle(
-              color: Color(0xFF1F2937),
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: 20),
-          Expanded(
-            child: ListView.builder(
-              itemCount: sortedApps.length,
-              itemBuilder: (context, index) {
-                final app = sortedApps[index];
-                final total = appState.totalUsageTime.inSeconds;
-                final percentage = total > 0
-                    ? (app.totalUsage.inSeconds / total) * 100
-                    : 0;
-
-                return Container(
-                  margin: const EdgeInsets.only(bottom: 12),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            app.name,
-                            style: const TextStyle(
-                              color: Color(0xFF1F2937),
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          Text(
-                            '${percentage.toStringAsFixed(1)}%',
-                            style: TextStyle(
-                              color: colors[index % colors.length],
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 4),
-                      Container(
-                        height: 4,
-                        decoration: BoxDecoration(
-                          color: Colors.grey[200],
-                          borderRadius: BorderRadius.circular(2),
-                        ),
-                        child: Stack(
-                          children: [
-                            FractionallySizedBox(
-                              widthFactor: percentage / 100,
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  color: colors[index % colors.length],
-                                  borderRadius: BorderRadius.circular(2),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              },
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTopApps(ApplicationState appState) {
-    final sortedApps = appState.sortedApplications.take(5).toList();
-    final colors = [
-      const Color(0xFF6366F1),
-      const Color(0xFF8B5CF6),
-      const Color(0xFFEC4899),
-      const Color(0xFFEF4444),
-      const Color(0xFFF59E0B),
-    ];
-
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE5E7EB), width: 1),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'TOP 应用',
-            style: TextStyle(
-              color: Color(0xFF1F2937),
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: 16),
-          ...sortedApps.asMap().entries.map((entry) {
-            final index = entry.key;
-            final app = entry.value;
-            return Container(
-              margin: const EdgeInsets.only(bottom: 12),
-              child: Row(
-                children: [
-                  Container(
-                    width: 8,
-                    height: 8,
-                    decoration: BoxDecoration(
-                      color: colors[index % colors.length],
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          app.name,
-                          style: const TextStyle(
-                            color: Color(0xFF1F2937),
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        Text(
-                          _formatDuration(app.totalUsage),
-                          style: TextStyle(
-                            color: Colors.grey[600],
-                            fontSize: 12,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            );
-          }).toList(),
-        ],
-      ),
-    );
-  }
-
   Widget _buildApplicationsList(ApplicationState appState) {
     if (appState.applicationUsages.isEmpty) {
+      // TODO: 增加一个没有应用的占位图
       return const SizedBox();
     }
 
@@ -645,6 +362,7 @@ class _ApplicationScreenState extends ConsumerState<ApplicationScreen>
                                 _decodeBase64(app.icon!),
                                 fit: BoxFit.cover,
                                 errorBuilder: (context, error, stackTrace) {
+                                  logger.shout(error);
                                   return Icon(
                                     Icons.apps,
                                     color: Colors.grey[600],
@@ -926,46 +644,6 @@ class _ApplicationScreenState extends ConsumerState<ApplicationScreen>
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildEmptyState() {
-    return Container(
-      height: 300,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE5E7EB), width: 1),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.analytics_outlined, size: 64, color: Colors.grey[400]),
-            const SizedBox(height: 16),
-            Text(
-              '暂无数据',
-              style: TextStyle(
-                color: Colors.grey[600],
-                fontSize: 18,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              '开始监控后将显示应用使用统计',
-              style: TextStyle(color: Colors.grey[500], fontSize: 14),
-            ),
-          ],
-        ),
       ),
     );
   }
