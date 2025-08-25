@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:spy_on_your_work/src/app/application/application_screen.dart';
 
 class MyApp extends StatefulWidget {
   const MyApp({super.key});
@@ -10,6 +11,6 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
-    return Container();
+    return Scaffold(body: ApplicationScreen());
   }
 }

@@ -11,3 +11,5 @@ Stream<Application> applicationInfoStream() =>
     RustLib.instance.api.crateApiSpyApiApplicationInfoStream();
 
 void startSpy() => RustLib.instance.api.crateApiSpyApiStartSpy();
+
+bool getSpyStatus() => RustLib.instance.api.crateApiSpyApiGetSpyStatus();

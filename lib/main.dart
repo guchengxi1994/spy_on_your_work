@@ -20,7 +20,16 @@ Future<void> main() async {
   runApp(
     ToastificationWrapper(
       child: ProviderScope(
-        child: MaterialApp(debugShowCheckedModeBanner: false, home: MyApp()),
+        child: MaterialApp(
+          theme: ThemeData(
+            colorScheme: ColorScheme.fromSeed(
+              seedColor: const Color.fromARGB(255, 128, 180, 217),
+              brightness: Brightness.light,
+            ),
+          ),
+          debugShowCheckedModeBanner: false,
+          home: MyApp(),
+        ),
       ),
     ),
   );

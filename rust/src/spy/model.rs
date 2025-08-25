@@ -1,8 +1,9 @@
 #[derive(Debug, Clone)]
 pub struct Application {
     pub icon: Option<String>,
-    pub name: String,
-    pub path: String,
+    pub name: String,        // 应用程序名称（从可执行文件路径提取，稳定不变）
+    pub title: String,       // 窗口标题（动态变化）
+    pub path: String,        // 可执行文件完整路径
 }
 
 #[cfg(target_os = "windows")]

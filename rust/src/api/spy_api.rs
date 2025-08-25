@@ -16,3 +16,8 @@ pub fn application_info_stream(s: StreamSink<Application>) -> anyhow::Result<()>
 pub fn start_spy() {
     crate::spy::api::start_spy();
 }
+
+#[frb(sync)]
+pub fn get_spy_status() -> bool {
+    crate::spy::api::SPY_ON.read().unwrap().clone()
+}

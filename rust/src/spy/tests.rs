@@ -337,12 +337,25 @@ mod tests {
                 // 使用ApplicationProvider创建Application实例
                 if let Some(app) = Application::from_process(hwnd) {
                     println!("=== ApplicationProvider 测试结果 ===");
-                    println!("应用名称: {}", app.name);
+                    println!("应用名称（稳定标识符）: {}", app.name);
+                    println!("窗口标题（动态变化）: {}", app.title);
                     println!("应用路径: {}", app.path);
+
+                    // 显示name和title的区别
+                    println!("\n=== Name vs Title 对比 ===");
+                    println!("name字段（从路径提取，稳定不变）: '{}'", app.name);
+                    println!("title字段（窗口标题，动态变化）: '{}'", app.title);
+
+                    if app.name != app.title {
+                        println!("✓ name和title不同，说明成功区分了应用标识符和窗口标题");
+                    } else {
+                        println!("⚠ name和title相同，可能是从title提取的fallback结果");
+                    }
 
                     // 测试图标获取
                     match &app.icon {
                         Some(icon_base64) => {
+                            println!("\n=== 图标信息 ===");
                             println!("图标获取成功！");
                             println!("图标base64长度: {} 字节", icon_base64.len());
                             if icon_base64.len() > 100 {
@@ -352,14 +365,24 @@ mod tests {
                             }
                             println!("可以将此base64字符串保存到数据库中。");
                         }
-                        None => println!("未获取到图标（这是正常情况，某些应用可能没有图标）"),
+                        None => println!("\n未获取到图标（这是正常情况，某些应用可能没有图标）"),
                     }
 
-                    // 从路径提取程序名
+                    // 验证从路径提取的程序名
                     if !app.path.is_empty() {
                         if let Some(program_name) = std::path::Path::new(&app.path).file_stem() {
-                            println!("程序名: {}", program_name.to_string_lossy());
+                            let extracted_name = program_name.to_string_lossy();
+                            println!("\n=== 路径验证 ===");
+                            println!("从路径提取的程序名: {}", extracted_name);
+                            if app.name == extracted_name {
+                                println!("✓ name字段与路径提取结果一致");
+                            } else {
+                                println!("⚠ name字段与路径提取结果不一致，可能使用了fallback逻辑");
+                            }
                         }
+                    } else {
+                        println!("\n=== 路径验证 ===");
+                        println!("⚠ 未获取到应用路径，name字段使用了从title提取的fallback值");
                     }
                 } else {
                     println!("无法从前台窗口创建Application实例");

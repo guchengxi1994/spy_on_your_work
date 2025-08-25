@@ -30,15 +30,15 @@ impl Application {
                 return None;
             }
 
-            // 获取窗口标题作为应用名称
+            // 获取窗口标题（动态变化）
             let mut title_buf = [0u16; 512];
             let title_len = GetWindowTextW(hwnd, &mut title_buf);
-            let name = if title_len > 0 {
+            let title = if title_len > 0 {
                 OsString::from_wide(&title_buf[..title_len as usize])
                     .to_string_lossy()
                     .into_owned()
             } else {
-                String::from("Unknown Application")
+                String::from("Unknown Window")
             };
 
             // 获取进程ID
@@ -62,12 +62,30 @@ impl Application {
                 String::new()
             };
 
+            // 从路径提取稳定的应用名称（不包含扩展名）
+            let name = if !path.is_empty() {
+                if let Some(file_stem) = std::path::Path::new(&path).file_stem() {
+                    file_stem.to_string_lossy().into_owned()
+                } else {
+                    // 如果从路径提取失败，使用窗口标题作为备选
+                    Self::extract_app_name_from_title(&title)
+                }
+            } else {
+                // 没有路径时，尝试从窗口标题提取应用名
+                Self::extract_app_name_from_title(&title)
+            };
+
             // 获取应用图标并转换为base64
             let icon = Self::get_window_icon_base64(hwnd);
 
-            // 如果没有获取到路径但有窗口标题，仍然创建Application
-            if !name.is_empty() || !path.is_empty() {
-                Some(Application { icon, name, path })
+            // 只要有标题或路径中的任意一个，就创建Application
+            if !title.is_empty() || !path.is_empty() {
+                Some(Application {
+                    icon,
+                    name,
+                    title,
+                    path,
+                })
             } else {
                 None
             }
@@ -220,5 +238,79 @@ impl Application {
         // 使用简单的PNG编码，这里我们返回原始RGBA数据
         // 在实际项目中，您可能想要使用png crate来生成真正的PNG
         Some(rgba_data)
+    }
+
+    /// 从窗口标题提取应用名称的辅助方法
+    /// 尝试从窗口标题中提取有意义的应用名称
+    fn extract_app_name_from_title(title: &str) -> String {
+        if title.is_empty() {
+            return String::from("Unknown Application");
+        }
+
+        // 常见的应用名称提取模式
+        let title_lower = title.to_lowercase();
+
+        // 对于一些常见的应用，直接识别
+        if title_lower.contains("visual studio code") || title_lower.contains("vscode") {
+            return String::from("Visual Studio Code");
+        } else if title_lower.contains("google chrome") || title_lower.contains("chrome") {
+            return String::from("Google Chrome");
+        } else if title_lower.contains("firefox") {
+            return String::from("Firefox");
+        } else if title_lower.contains("microsoft edge") || title_lower.contains("edge") {
+            return String::from("Microsoft Edge");
+        } else if title_lower.contains("notepad++") {
+            return String::from("Notepad++");
+        } else if title_lower.contains("notepad") && !title_lower.contains("notepad++") {
+            return String::from("Notepad");
+        } else if title_lower.contains("explorer") {
+            return String::from("File Explorer");
+        } else if title_lower.contains("cmd") || title_lower.contains("command prompt") {
+            return String::from("Command Prompt");
+        } else if title_lower.contains("powershell") {
+            return String::from("PowerShell");
+        } else if title_lower.contains("terminal") {
+            return String::from("Windows Terminal");
+        } else if title_lower.contains("word") {
+            return String::from("Microsoft Word");
+        } else if title_lower.contains("excel") {
+            return String::from("Microsoft Excel");
+        } else if title_lower.contains("powerpoint") {
+            return String::from("Microsoft PowerPoint");
+        } else if title_lower.contains("outlook") {
+            return String::from("Microsoft Outlook");
+        }
+
+        // 如果没有匹配到知名应用，尝试从标题中提取第一部分
+        // 对于形如 "Document1 - Microsoft Word" 的标题
+        if let Some(dash_pos) = title.rfind(" - ") {
+            let app_part = title[dash_pos + 3..].trim();
+            if !app_part.is_empty() {
+                return app_part.to_string();
+            }
+        }
+
+        // 对于形如 "Document1 — Microsoft Word" 的标题（使用em dash）
+        if let Some(em_dash_pos) = title.rfind(" — ") {
+            let app_part = title[em_dash_pos + 3..].trim();
+            if !app_part.is_empty() {
+                return app_part.to_string();
+            }
+        }
+
+        // 对于形如 "filename.txt • Notepad++" 的标题
+        if let Some(bullet_pos) = title.rfind(" • ") {
+            let app_part = title[bullet_pos + 3..].trim();
+            if !app_part.is_empty() {
+                return app_part.to_string();
+            }
+        }
+
+        // 如果都没有，直接使用原始标题（截取前50个字符避免过长）
+        if title.len() > 50 {
+            format!("{}...", &title[..47])
+        } else {
+            title.to_string()
+        }
     }
 }

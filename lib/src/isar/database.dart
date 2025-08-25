@@ -1,6 +1,7 @@
 import 'package:isar_community/isar.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:spy_on_your_work/src/common/logger.dart';
+import 'package:spy_on_your_work/src/isar/app_record.dart';
 import 'package:spy_on_your_work/src/isar/apps.dart';
 
 class IsarDatabase {
@@ -21,5 +22,8 @@ class IsarDatabase {
     isar = await Isar.open(schemas, name: "soyw", directory: dir.path);
   }
 
-  late List<CollectionSchema<Object>> schemas = [IApplicationSchema];
+  late List<CollectionSchema<Object>> schemas = [
+    IApplicationSchema,
+    AppRecordSchema,
+  ];
 }

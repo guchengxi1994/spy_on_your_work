@@ -9,12 +9,19 @@ import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 class Application {
   final String? icon;
   final String name;
+  final String title;
   final String path;
 
-  const Application({this.icon, required this.name, required this.path});
+  const Application({
+    this.icon,
+    required this.name,
+    required this.title,
+    required this.path,
+  });
 
   @override
-  int get hashCode => icon.hashCode ^ name.hashCode ^ path.hashCode;
+  int get hashCode =>
+      icon.hashCode ^ name.hashCode ^ title.hashCode ^ path.hashCode;
 
   @override
   bool operator ==(Object other) =>
@@ -23,5 +30,6 @@ class Application {
           runtimeType == other.runtimeType &&
           icon == other.icon &&
           name == other.name &&
+          title == other.title &&
           path == other.path;
 }
