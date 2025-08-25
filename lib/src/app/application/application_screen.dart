@@ -19,6 +19,12 @@ class _ApplicationScreenState extends ConsumerState<ApplicationScreen>
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
 
+  // 功能面板状态
+  bool _isStatsExpanded = false;
+  late AnimationController _statsAnimationController;
+  late Animation<double> _statsSlideAnimation;
+  late Animation<double> _statsOpacityAnimation;
+
   @override
   void initState() {
     super.initState();
@@ -30,11 +36,30 @@ class _ApplicationScreenState extends ConsumerState<ApplicationScreen>
       CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
     );
     _animationController.forward();
+
+    // 初始化统计面板动画
+    _statsAnimationController = AnimationController(
+      duration: const Duration(milliseconds: 300),
+      vsync: this,
+    );
+    _statsSlideAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _statsAnimationController,
+        curve: Curves.easeInOut,
+      ),
+    );
+    _statsOpacityAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _statsAnimationController,
+        curve: Curves.easeInOut,
+      ),
+    );
   }
 
   @override
   void dispose() {
     _animationController.dispose();
+    _statsAnimationController.dispose();
     super.dispose();
   }
 
@@ -42,6 +67,8 @@ class _ApplicationScreenState extends ConsumerState<ApplicationScreen>
   Widget build(BuildContext context) {
     final appState = ref.watch(applicationNotifierProvider);
     final notifier = ref.read(applicationNotifierProvider.notifier);
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isNarrowScreen = screenWidth < 600;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
@@ -50,40 +77,342 @@ class _ApplicationScreenState extends ConsumerState<ApplicationScreen>
         child: Stack(
           children: [
             // 主要内容
-            Container(
-              padding: const EdgeInsets.all(10.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    '概览',
-                    style: TextStyle(
-                      color: Color(0xFF1F2937),
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  _buildStatsCards(appState),
-                  const SizedBox(height: 32),
-                  const Text(
-                    '所有应用',
-                    style: TextStyle(
-                      color: Color(0xFF1F2937),
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Expanded(child: _buildApplicationsList(appState)),
-                ],
-              ),
-            ),
+            _buildMainContent(appState, isNarrowScreen),
+            // 统计面板
+            _buildStatsPanel(appState, isNarrowScreen),
+            // 统计按钮
+            _buildStatsToggleButton(isNarrowScreen),
             // 模糊背景和启动按钮（仅在未启动时显示）
             if (!appState.isSpyOn) _buildStartOverlay(appState, notifier),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildMainContent(ApplicationState appState, bool isNarrowScreen) {
+    return Container(
+      padding: const EdgeInsets.all(10.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            '概览',
+            style: TextStyle(
+              color: Color(0xFF1F2937),
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 24),
+          _buildStatsCards(appState),
+          const SizedBox(height: 32),
+          const Text(
+            '所有应用',
+            style: TextStyle(
+              color: Color(0xFF1F2937),
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Expanded(child: _buildApplicationsList(appState)),
+        ],
+      ),
+    );
+  }
+
+  /// 构建统计面板
+  Widget _buildStatsPanel(ApplicationState appState, bool isNarrowScreen) {
+    if (!_isStatsExpanded) {
+      return const SizedBox.shrink();
+    }
+
+    return Positioned.fill(
+      child: AnimatedBuilder(
+        animation: _statsOpacityAnimation,
+        builder: (context, child) {
+          return Stack(
+            children: [
+              // 背景模糊效果
+              BackdropFilter(
+                filter: ImageFilter.blur(
+                  sigmaX: 5.0 * _statsOpacityAnimation.value,
+                  sigmaY: 5.0 * _statsOpacityAnimation.value,
+                ),
+                child: Container(
+                  color: Colors.black.withOpacity(
+                    0.2 * _statsOpacityAnimation.value,
+                  ),
+                ),
+              ),
+              // 点击空白区域关闭面板
+              GestureDetector(
+                onTap: _toggleStatsPanel,
+                child: Container(color: Colors.transparent),
+              ),
+              // 统计面板
+              AnimatedBuilder(
+                animation: _statsSlideAnimation,
+                builder: (context, child) {
+                  return Positioned(
+                    top: isNarrowScreen
+                        ? -200 + (200 * _statsSlideAnimation.value)
+                        : (MediaQuery.of(context).size.height - 300) /
+                              2, // 右侧时垂直居中
+                    right: isNarrowScreen
+                        ? 0
+                        : -320 + (320 * _statsSlideAnimation.value),
+                    left: isNarrowScreen ? 0 : null,
+                    child: GestureDetector(
+                      onTap: () {}, // 阻止点击事件传递
+                      child: Container(
+                        width: isNarrowScreen ? null : 320,
+                        height: isNarrowScreen ? 200 : 300,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: _getStatsPanelBorderRadius(
+                            isNarrowScreen,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.15),
+                              blurRadius: 20,
+                              offset: isNarrowScreen
+                                  ? const Offset(0, 4)
+                                  : const Offset(-4, 0),
+                            ),
+                          ],
+                        ),
+                        child: _buildStatsContent(appState, isNarrowScreen),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  /// 构建统计切换按钮
+  Widget _buildStatsToggleButton(bool isNarrowScreen) {
+    return AnimatedPositioned(
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+      // 窄屏时：未弹出在右上角，弹出后贴着面板底部
+      top: isNarrowScreen
+          ? (_isStatsExpanded ? 200 - 24 : 10) // 弹出时贴着面板底部
+          : (MediaQuery.of(context).size.height - 300) / 2 + 126,
+      bottom: null,
+      // 宽屏时：未弹出在右侧，弹出后贴着面板左侧
+      left: !isNarrowScreen && _isStatsExpanded
+          ? MediaQuery.of(context).size.width -
+                320 -
+                24 // 贴着面板左侧
+          : null,
+      right: (!isNarrowScreen && _isStatsExpanded) ? null : 10,
+      child: GestureDetector(
+        onTap: _toggleStatsPanel,
+        child: Container(
+          width: 48,
+          height: 48,
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            // 根据弹出方向调整圆角
+            borderRadius: _isStatsExpanded && !isNarrowScreen
+                ? const BorderRadius.only(
+                    topLeft: Radius.circular(24),
+                    bottomLeft: Radius.circular(24),
+                    topRight: Radius.circular(8),
+                    bottomRight: Radius.circular(8),
+                  )
+                : BorderRadius.circular(24),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF6366F1).withOpacity(0.3),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Icon(
+            _isStatsExpanded
+                ? Icons.close
+                : (isNarrowScreen ? Icons.expand_more : Icons.chevron_left),
+            color: Colors.white,
+            size: 24,
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// 构建统计内容
+  Widget _buildStatsContent(ApplicationState appState, bool isNarrowScreen) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(
+                Icons.analytics_outlined,
+                color: Color(0xFF6366F1),
+                size: 24,
+              ),
+              const SizedBox(width: 8),
+              const Text(
+                '应用统计',
+                style: TextStyle(
+                  color: Color(0xFF1F2937),
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const Spacer(),
+              IconButton(
+                onPressed: _toggleStatsPanel,
+                icon: const Icon(Icons.close, color: Colors.grey),
+                iconSize: 20,
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Expanded(
+            child: SingleChildScrollView(
+              child: Column(
+                children: [
+                  _buildStatsItem(
+                    '工作应用',
+                    '3 个',
+                    '2.5h',
+                    const Color(0xFF3B82F6),
+                    Icons.work_outline,
+                  ),
+                  const SizedBox(height: 12),
+                  _buildStatsItem(
+                    '娱乐应用',
+                    '2 个',
+                    '1.2h',
+                    const Color(0xFF10B981),
+                    Icons.games_outlined,
+                  ),
+                  const SizedBox(height: 12),
+                  _buildStatsItem(
+                    '学习应用',
+                    '1 个',
+                    '0.8h',
+                    const Color(0xFF8B5CF6),
+                    Icons.school_outlined,
+                  ),
+                  const SizedBox(height: 12),
+                  _buildStatsItem(
+                    '其他应用',
+                    '${appState.applicationUsages.length} 个',
+                    _formatDuration(appState.totalUsageTime),
+                    const Color(0xFF6B7280),
+                    Icons.apps,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 构建统计项
+  Widget _buildStatsItem(
+    String title,
+    String count,
+    String duration,
+    Color color,
+    IconData icon,
+  ) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withOpacity(0.3), width: 1),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(icon, color: color, size: 16),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    color: color,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  '$count · $duration',
+                  style: TextStyle(color: color.withOpacity(0.8), fontSize: 11),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 切换统计面板显示状态
+  void _toggleStatsPanel() {
+    setState(() {
+      _isStatsExpanded = !_isStatsExpanded;
+    });
+
+    if (_isStatsExpanded) {
+      _statsAnimationController.forward();
+    } else {
+      _statsAnimationController.reverse();
+    }
+  }
+
+  /// 获取统计面板的圆角设置
+  BorderRadius _getStatsPanelBorderRadius(bool isNarrowScreen) {
+    // 如果面板未展开，不需要圆角
+    if (!_isStatsExpanded) {
+      return BorderRadius.zero;
+    }
+
+    // 窄屏（<600px）：面板从顶部弹出，只有底部圆角
+    if (isNarrowScreen) {
+      return const BorderRadius.only(
+        bottomLeft: Radius.circular(24),
+        bottomRight: Radius.circular(24),
+      );
+    }
+
+    // 宽屏（≥600px）：面板从右侧弹出，只有左侧圆角
+    return const BorderRadius.only(
+      topLeft: Radius.circular(24),
+      bottomLeft: Radius.circular(24),
     );
   }
 
