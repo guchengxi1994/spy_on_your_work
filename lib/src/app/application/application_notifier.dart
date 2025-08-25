@@ -1,21 +1,54 @@
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:isar_community/isar.dart';
 import 'package:spy_on_your_work/src/app/application/application_state.dart';
 import 'package:spy_on_your_work/src/common/logger.dart';
+import 'package:spy_on_your_work/src/isar/app_record.dart';
+import 'package:spy_on_your_work/src/isar/apps.dart';
+import 'package:spy_on_your_work/src/isar/database.dart';
 import 'package:spy_on_your_work/src/rust/api/spy_api.dart' as api;
 
 class ApplicationNotifier extends Notifier<ApplicationState> {
-  Timer? _sessionTimer;
   DateTime? _currentSessionStart;
+  final IsarDatabase database = IsarDatabase();
 
   @override
   ApplicationState build() {
     // 监听应用信息流
-    api.applicationInfoStream().listen((event) {
+    api.applicationInfoStream().listen((event) async {
       logger.info(
         "running app: ${event.name}, title: ${event.title}, path: ${event.path}",
       );
       _handleAppSwitch(event);
+      // 查询应用信息，如果没有存储到数据库，则存储
+      final appinfo = await database.isar!.iApplications
+          .filter()
+          .nameEqualTo(event.name)
+          .pathEqualTo(event.path)
+          .findFirst();
+      if (appinfo == null) {
+        await database.isar!.writeTxn(() async {
+          await database.isar!.iApplications.put(
+            IApplication()
+              ..name = event.name
+              ..path = event.path
+              ..icon = event.icon,
+          );
+        });
+      }
+      // 将数据存储到 AppRecord 数据库中
+      await database.isar!.writeTxn(() async {
+        final now = DateTime.now();
+        await database.isar!.appRecords.put(
+          AppRecord()
+            ..appId = appinfo!.id
+            ..day = now.day
+            ..hour = now.hour
+            ..minute = now.minute
+            ..year = now.year
+            ..month = now.month,
+        );
+      });
     });
 
     return ApplicationState(isSpyOn: api.getSpyStatus());
@@ -88,7 +121,6 @@ class ApplicationNotifier extends Notifier<ApplicationState> {
   void stopSpy() {
     if (state.isSpyOn) {
       _endCurrentSession();
-      _sessionTimer?.cancel();
       state = state.copyWith(
         isSpyOn: false,
         currentApp: null,
@@ -105,12 +137,6 @@ class ApplicationNotifier extends Notifier<ApplicationState> {
       sessionStartTime: null,
     );
     logger.info("清除所有统计数据");
-  }
-
-  @override
-  void dispose() {
-    _sessionTimer?.cancel();
-    // Notifier 不需要调用 super.dispose()
   }
 }
 
