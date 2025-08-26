@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:spy_on_your_work/src/app/application/application_notifier.dart';
 import 'package:spy_on_your_work/src/app/application/application_state.dart';
 import 'package:spy_on_your_work/src/app/application/components/application_list_item.dart';
@@ -255,7 +256,10 @@ class _ApplicationScreenState extends ConsumerState<ApplicationScreen>
             index: index,
             isCurrentApp: isCurrentApp,
             percentage: percentage,
-            onTap: () => AppDetailDialog.show(context, app, percentage),
+            onTap: () {
+              // 导航到应用详情页面
+              context.go('/app-detail/${Uri.encodeComponent(app.name)}');
+            },
           );
         },
       ),
