@@ -45,6 +45,12 @@ class ApplicationListItem extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           decoration: BoxDecoration(
+            borderRadius: index == 0
+                ? BorderRadius.only(
+                    topLeft: Radius.circular(8),
+                    topRight: Radius.circular(8),
+                  )
+                : null,
             color: isCurrentApp
                 ? const Color(0xFF6366F1).withValues(alpha: 0.05)
                 : Colors.transparent,

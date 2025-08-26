@@ -66,11 +66,12 @@ class IsarDatabase {
         .findFirst();
 
     if (appInfo == null) {
-      // 不存在则创建
+      // 不存在则创建，默认设置为unknown类型
       appInfo = IApplication()
         ..name = name
         ..path = path
-        ..icon = icon;
+        ..icon = icon
+        ..type = IAppTypes.unknown; // 确保设置默认类型
 
       await isar!.writeTxn(() async {
         appInfo!.id = await isar!.iApplications.put(appInfo);
@@ -164,6 +165,7 @@ class IsarDatabase {
   /// 按应用类型统计当天使用时长
   Future<Map<IAppTypes, Duration>> getTodayUsageByCategory() async {
     final allApps = await getAllApplications();
+    // ignore: unused_local_variable
     final todayRecords = await getTodayAppRecords();
     final todayDurations = await getTodayAppUsageDurations();
 

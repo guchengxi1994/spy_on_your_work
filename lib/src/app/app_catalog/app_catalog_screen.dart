@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:flutter_layout_grid/flutter_layout_grid.dart';
 import 'package:spy_on_your_work/src/app/application/application_notifier.dart';
 import 'package:spy_on_your_work/src/app/application/application_state.dart';
-import 'package:spy_on_your_work/src/app/app_catalog/app_catalog_notifier_simple.dart';
+import 'package:spy_on_your_work/src/app/app_catalog/app_catalog_notifier.dart';
 import 'package:spy_on_your_work/src/app/app_catalog/components/optimized_category_card.dart';
 import 'package:spy_on_your_work/src/isar/apps.dart';
 

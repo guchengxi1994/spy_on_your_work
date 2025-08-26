@@ -48,7 +48,7 @@ class _AppChartScreenState extends ConsumerState<AppChartScreen> {
         ),
         leading: IconButton(
           onPressed: () => context.go("/"),
-          icon: const Icon(Icons.arrow_back_ios, color: Color(0xFF6366F1)),
+          icon: const Icon(Icons.arrow_back, color: Color(0xFF1F2937)),
         ),
         // actions: [
         //   IconButton(

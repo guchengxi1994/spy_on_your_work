@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:spy_on_your_work/src/app/application/application_state.dart';
 import 'package:spy_on_your_work/src/app/application/components/cached_app_icon.dart';
 import 'package:spy_on_your_work/src/isar/apps.dart';
-import 'package:spy_on_your_work/src/app/app_catalog/app_catalog_notifier_simple.dart';
+import 'package:spy_on_your_work/src/app/app_catalog/app_catalog_notifier.dart';
 
 /// 优化的分类卡片组件，支持响应式布局
 class OptimizedCategoryCard extends StatefulWidget {
@@ -218,24 +218,27 @@ class _OptimizedCategoryCardState extends State<OptimizedCategoryCard> {
         ),
         child: Icon(Icons.apps, color: Colors.grey[400], size: 16),
       ),
-      child: GestureDetector(
-        onLongPress: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('长按拖拽 ${app.name} 到其他分类'),
-              duration: const Duration(seconds: 1),
+      child: Tooltip(
+        message: app.name,
+        child: GestureDetector(
+          onLongPress: () {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('长按拖拽 ${app.name} 到其他分类'),
+                duration: const Duration(seconds: 1),
+              ),
+            );
+          },
+          child: Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(6),
+              border: Border.all(color: Colors.grey[300]!),
             ),
-          );
-        },
-        child: Container(
-          width: 32,
-          height: 32,
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(6),
-            border: Border.all(color: Colors.grey[300]!),
+            child: CachedAppIcon(iconData: app.icon, size: 20),
           ),
-          child: CachedAppIcon(iconData: app.icon, size: 20),
         ),
       ),
     );
@@ -351,15 +354,18 @@ class DragSourceArea extends StatelessWidget {
         ),
         child: Icon(Icons.apps, color: Colors.grey[400], size: 20),
       ),
-      child: Container(
-        width: 40,
-        height: 40,
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: Colors.grey[300]!),
+      child: Tooltip(
+        message: app.name,
+        child: Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: Colors.grey[300]!),
+          ),
+          child: CachedAppIcon(iconData: app.icon, size: 28),
         ),
-        child: CachedAppIcon(iconData: app.icon, size: 28),
       ),
     );
   }
