@@ -146,4 +146,96 @@ class IsarDatabase {
 
     return counts;
   }
+
+  /// 获取所有应用使用记录
+  Future<List<AppRecord>> getAllAppRecords() async {
+    if (isar == null) await initialDatabase();
+
+    return await isar!.appRecords.where().findAll();
+  }
+
+  /// 获取所有应用信息
+  Future<List<IApplication>> getAllApplications() async {
+    if (isar == null) await initialDatabase();
+
+    return await isar!.iApplications.where().findAll();
+  }
+
+  /// 按应用类型统计当天使用时长
+  Future<Map<IAppTypes, Duration>> getTodayUsageByCategory() async {
+    final allApps = await getAllApplications();
+    final todayRecords = await getTodayAppRecords();
+    final todayDurations = await getTodayAppUsageDurations();
+
+    final Map<IAppTypes, Duration> categoryUsage = {};
+
+    // 初始化所有分类
+    for (final category in IAppTypes.values) {
+      categoryUsage[category] = Duration.zero;
+    }
+
+    // 按应用ID查找对应的分类并累加使用时长
+    for (final entry in todayDurations.entries) {
+      final appId = entry.key;
+      final duration = entry.value;
+
+      final app = allApps.firstWhere(
+        (app) => app.id == appId,
+        orElse: () => IApplication()..type = IAppTypes.unknown,
+      );
+
+      categoryUsage[app.type] = categoryUsage[app.type]! + duration;
+    }
+
+    return categoryUsage;
+  }
+
+  /// 按应用类型统计全部使用时长
+  Future<Map<IAppTypes, Duration>> getAllTimeUsageByCategory() async {
+    final allApps = await getAllApplications();
+    final allRecords = await getAllAppRecords();
+
+    // 计算所有记录的使用时长
+    final Map<int, Set<int>> appMinutes = {};
+
+    for (final record in allRecords) {
+      appMinutes.putIfAbsent(record.appId, () => <int>{});
+      // 使用日期+小时+分钟作为唯一标识符
+      final uniqueMinute =
+          record.year * 100000000 +
+          record.month * 1000000 +
+          record.day * 10000 +
+          record.hour * 100 +
+          record.minute;
+      appMinutes[record.appId]!.add(uniqueMinute);
+    }
+
+    // 转换为时长
+    final Map<int, Duration> allDurations = {};
+    appMinutes.forEach((appId, minutes) {
+      allDurations[appId] = Duration(minutes: minutes.length);
+    });
+
+    final Map<IAppTypes, Duration> categoryUsage = {};
+
+    // 初始化所有分类
+    for (final category in IAppTypes.values) {
+      categoryUsage[category] = Duration.zero;
+    }
+
+    // 按应用ID查找对应的分类并累加使用时长
+    for (final entry in allDurations.entries) {
+      final appId = entry.key;
+      final duration = entry.value;
+
+      final app = allApps.firstWhere(
+        (app) => app.id == appId,
+        orElse: () => IApplication()..type = IAppTypes.unknown,
+      );
+
+      categoryUsage[app.type] = categoryUsage[app.type]! + duration;
+    }
+
+    return categoryUsage;
+  }
 }

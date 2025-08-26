@@ -156,6 +156,9 @@ class StatsPanel extends StatelessWidget {
                     _buildStatsItem('分类', null, () {
                       context.go('/catalog');
                     }),
+                    _buildStatsItem('使用统计', null, () {
+                      context.go('/chart');
+                    }),
                     // 可以在这里添加更多统计项
                   ],
                 ),
@@ -169,6 +172,24 @@ class StatsPanel extends StatelessWidget {
 
   /// 构建统计项
   Widget _buildStatsItem(String title, String? iconPath, VoidCallback onTap) {
+    IconData iconData;
+    String description;
+
+    // 根据标题设置不同的图标和描述
+    switch (title) {
+      case '分类':
+        iconData = Icons.category_outlined;
+        description = '查看应用分类';
+        break;
+      case '使用统计':
+        iconData = Icons.pie_chart_outline;
+        description = '应用使用时间统计';
+        break;
+      default:
+        iconData = Icons.folder_outlined;
+        description = '查看详情';
+    }
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -207,13 +228,7 @@ class StatsPanel extends StatelessWidget {
                   ),
                 ],
               ),
-              child: Icon(
-                iconPath != null
-                    ? Icons.folder_outlined
-                    : Icons.category_outlined,
-                color: Colors.white,
-                size: 24,
-              ),
+              child: Icon(iconData, color: Colors.white, size: 24),
             ),
             const SizedBox(width: 16),
             // 标题和描述
@@ -231,7 +246,7 @@ class StatsPanel extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    '查看应用分类',
+                    description,
                     style: TextStyle(
                       color: Colors.grey[600],
                       fontSize: 14,

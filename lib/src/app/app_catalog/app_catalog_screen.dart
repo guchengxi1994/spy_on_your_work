@@ -69,15 +69,15 @@ class _AppCatalogScreenState extends ConsumerState<AppCatalogScreen> {
           icon: const Icon(Icons.arrow_back, color: Color(0xFF1F2937)),
           onPressed: () => context.go('/'),
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh, color: Color(0xFF1F2937)),
-            onPressed: () {
-              ref.read(appCatalogNotifierProvider.notifier).refresh();
-              _updateUncategorizedApps();
-            },
-          ),
-        ],
+        // actions: [
+        //   IconButton(
+        //     icon: const Icon(Icons.refresh, color: Color(0xFF1F2937)),
+        //     onPressed: () {
+        //       ref.read(appCatalogNotifierProvider.notifier).refresh();
+        //       _updateUncategorizedApps();
+        //     },
+        //   ),
+        // ],
       ),
       body: catalogState.isLoading
           ? const Center(
