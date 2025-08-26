@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_layout_grid/flutter_layout_grid.dart';
 import 'package:spy_on_your_work/src/app/application/application_notifier.dart';
 import 'package:spy_on_your_work/src/app/application/application_state.dart';
 import 'package:spy_on_your_work/src/app/app_catalog/app_catalog_notifier_simple.dart';
@@ -268,93 +269,43 @@ class _AppCatalogScreenState extends ConsumerState<AppCatalogScreen> {
         .where((type) => type != IAppTypes.unknown)
         .toList();
 
-    // 响应式网格参数
-    int crossAxisCount;
-    double childAspectRatio;
-
+    // 根据屏幕尺寸确定列数
+    int columnCount;
     if (isCompactMode) {
-      // 紧凑模式：单列，高度较小
-      crossAxisCount = 1;
-      childAspectRatio = 5.0; // 增加比例，让卡片更紧凑
+      columnCount = 1; // 窄屏：单列
     } else if (isMediumScreen) {
-      // 中等屏幕：单列，适中高度
-      crossAxisCount = 1;
-      childAspectRatio = 3.0; // 适中的高度比例
+      columnCount = 1; // 中屏：单列，避免挤压
     } else {
-      // 宽屏：双列，正常高度
-      crossAxisCount = 2;
-      childAspectRatio = 1.4; // 略微增加比例，减少高度
+      columnCount = 2; // 宽屏：双列
     }
 
-    return GridView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(), // 禁用内部滚动
-      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: crossAxisCount,
-        childAspectRatio: childAspectRatio,
-        crossAxisSpacing: 8,
-        mainAxisSpacing: 8,
+    // 计算行数
+    final rowCount = (categories.length / columnCount).ceil();
+
+    return LayoutGrid(
+      columnSizes: List.generate(
+        columnCount,
+        (index) => 1.fr, // 等宽列
       ),
-      itemCount: categories.length,
-      itemBuilder: (context, index) {
-        final type = categories[index];
-        final apps = catalogState.categorizedApps[type] ?? [];
-        return OptimizedCategoryCard(
-          type: type,
-          apps: apps,
-          isCompactMode: isCompactMode || isMediumScreen, // 中等屏幕也使用紧凑模式
-          onAppMoved: (app, targetType) {
-            ref
-                .read(appCatalogNotifierProvider.notifier)
-                .moveAppToCategory(app, targetType);
-            // 更新未分类应用列表
-            Future.delayed(const Duration(milliseconds: 500), () {
-              _updateUncategorizedApps();
-            });
-          },
-        );
-      },
-    );
-  }
-
-  Widget _buildCategoryGridSliver(
-    AppCatalogState catalogState,
-    bool isCompactMode,
-    bool isMediumScreen,
-  ) {
-    // 排除 unknown 分类
-    final categories = IAppTypes.values
-        .where((type) => type != IAppTypes.unknown)
-        .toList();
-
-    // 响应式网格参数
-    int crossAxisCount;
-    double childAspectRatio;
-
-    if (isCompactMode) {
-      // 紧凑模式：单列，高度较小
-      crossAxisCount = 1;
-      childAspectRatio = 5.0;
-    } else if (isMediumScreen) {
-      // 中等屏幕：单列，适中高度
-      crossAxisCount = 1;
-      childAspectRatio = 3.0;
-    } else {
-      // 宽屏：双列，正常高度
-      crossAxisCount = 2;
-      childAspectRatio = 1.4;
-    }
-
-    return SliverGrid(
-      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: crossAxisCount,
-        childAspectRatio: childAspectRatio,
-        crossAxisSpacing: 8,
-        mainAxisSpacing: 8,
+      rowSizes: List.generate(
+        rowCount,
+        (index) => isCompactMode
+            ? const FixedTrackSize(80) // 紧凑模式：固定80px高度
+            : isMediumScreen
+            ? const FixedTrackSize(100) // 中等屏幕：固定100px高度
+            : IntrinsicContentTrackSize(), // 宽屏：自适应内容高度
       ),
-      delegate: SliverChildBuilderDelegate((context, index) {
-        final type = categories[index];
+      columnGap: 8,
+      rowGap: 8,
+      children: categories.asMap().entries.map((entry) {
+        final index = entry.key;
+        final type = entry.value;
         final apps = catalogState.categorizedApps[type] ?? [];
+
+        // 计算网格位置
+        final column = index % columnCount;
+        final row = index ~/ columnCount;
+
         return OptimizedCategoryCard(
           type: type,
           apps: apps,
@@ -368,8 +319,19 @@ class _AppCatalogScreenState extends ConsumerState<AppCatalogScreen> {
               _updateUncategorizedApps();
             });
           },
-        );
-      }, childCount: categories.length),
+        ).withGridPlacement(columnStart: column, rowStart: row);
+      }).toList(),
+    );
+  }
+
+  Widget _buildCategoryGridSliver(
+    AppCatalogState catalogState,
+    bool isCompactMode,
+    bool isMediumScreen,
+  ) {
+    // 直接使用LayoutGrid并用SliverToBoxAdapter包装
+    return SliverToBoxAdapter(
+      child: _buildCategoryGrid(catalogState, isCompactMode, isMediumScreen),
     );
   }
 

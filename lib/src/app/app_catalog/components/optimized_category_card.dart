@@ -56,11 +56,9 @@ class _OptimizedCategoryCardState extends State<OptimizedCategoryCard> {
         return AnimatedContainer(
           duration: const Duration(milliseconds: 200),
           margin: const EdgeInsets.all(4),
-          padding: EdgeInsets.all(widget.isCompactMode ? 12 : 16),
-          constraints: BoxConstraints(
-            minHeight: widget.isCompactMode ? 80 : 120,
-            maxHeight: widget.isCompactMode ? 100 : 200,
-          ),
+          padding: EdgeInsets.all(widget.isCompactMode ? 8 : 12),
+          width: double.infinity, // 占满容器宽度
+          height: double.infinity, // 占满容器高度
           decoration: BoxDecoration(
             color: _isDragOver ? color.withOpacity(0.1) : Colors.white,
             borderRadius: BorderRadius.circular(12),
