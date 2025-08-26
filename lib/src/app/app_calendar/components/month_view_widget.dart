@@ -128,7 +128,9 @@ class MonthViewWidget extends StatelessWidget {
     return GridView.builder(
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 7,
-        childAspectRatio: 1.0,
+        childAspectRatio: 1.2, // 增加高度比例，让单元格更高
+        crossAxisSpacing: 2,
+        mainAxisSpacing: 2,
       ),
       itemCount: totalDays,
       itemBuilder: (context, index) {
@@ -174,69 +176,93 @@ class MonthViewWidget extends StatelessWidget {
             isToday,
             isInCurrentMonth,
           ),
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(12),
           border: isSelected
               ? Border.all(color: Theme.of(context).primaryColor, width: 2)
+              : hasData && isInCurrentMonth
+              ? Border.all(color: Colors.blue.withOpacity(0.3), width: 1)
+              : null,
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: Theme.of(context).primaryColor.withOpacity(0.3),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  ),
+                ]
               : null,
         ),
-        child: Column(
-          children: [
-            // 日期数字
-            Container(
-              padding: const EdgeInsets.all(8),
-              child: Text(
+        child: Padding(
+          padding: const EdgeInsets.all(6),
+          child: Column(
+            children: [
+              // 日期数字
+              Text(
                 '${date.day}',
                 style: TextStyle(
                   fontWeight: isToday || isSelected
                       ? FontWeight.bold
-                      : FontWeight.normal,
+                      : FontWeight.w500,
                   color: isInCurrentMonth
-                      ? (isSelected ? Colors.white : null)
+                      ? (isSelected ? Colors.white : Colors.black87)
                       : Colors.grey[400],
                   fontSize: 16,
                 ),
               ),
-            ),
-            // 使用统计
-            if (hasData && isInCurrentMonth) ...[
-              Expanded(
-                child: Column(
-                  children: [
-                    // 总时长
-                    Text(
-                      _formatDuration(totalDuration),
-                      style: TextStyle(
-                        fontSize: 10,
-                        color: isSelected ? Colors.white : Colors.grey[600],
-                        fontWeight: FontWeight.w500,
+              const SizedBox(height: 4),
+              // 使用统计
+              if (hasData && isInCurrentMonth) ...[
+                Expanded(
+                  child: Column(
+                    children: [
+                      // 总时长
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 4,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: isSelected
+                              ? Colors.white.withOpacity(0.2)
+                              : Colors.blue.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          _formatDuration(totalDuration),
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: isSelected ? Colors.white : Colors.blue[800],
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 2),
-                    // 分类指示器
-                    Expanded(
-                      child: _buildCategoryIndicators(
-                        context,
-                        usage,
-                        isSelected,
+                      const SizedBox(height: 4),
+                      // 分类指示器
+                      Expanded(
+                        child: _buildCategoryIndicators(
+                          context,
+                          usage,
+                          isSelected,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-            ] else if (isInCurrentMonth) ...[
-              Expanded(
-                child: Center(
-                  child: Text(
-                    '无记录',
-                    style: TextStyle(
-                      fontSize: 8,
-                      color: isSelected ? Colors.white70 : Colors.grey[400],
+              ] else if (isInCurrentMonth) ...[
+                Expanded(
+                  child: Center(
+                    child: Text(
+                      '无记录',
+                      style: TextStyle(
+                        fontSize: 9,
+                        color: isSelected ? Colors.white70 : Colors.grey[400],
+                      ),
                     ),
                   ),
                 ),
-              ),
+              ],
             ],
-          ],
+          ),
         ),
       ),
     );
@@ -260,34 +286,40 @@ class MonthViewWidget extends StatelessWidget {
     return Column(
       children: topCategories.map((entry) {
         final color = AppUsageEvent.getCategoryColor(entry.key);
-        return Container(
-          margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-          height: 8,
-          decoration: BoxDecoration(
-            color: isSelected ? Colors.white : color,
-            borderRadius: BorderRadius.circular(4),
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 8,
-                decoration: BoxDecoration(
-                  color: color,
-                  borderRadius: BorderRadius.circular(4),
-                ),
-              ),
-              const SizedBox(width: 2),
-              Expanded(
-                child: Text(
-                  _formatDuration(entry.value),
-                  style: TextStyle(
-                    fontSize: 7,
-                    color: isSelected ? Colors.black54 : Colors.white,
+        final categoryName = AppUsageEvent.getCategoryDisplayName(entry.key);
+
+        return Expanded(
+          child: Container(
+            margin: const EdgeInsets.symmetric(horizontal: 2, vertical: 1),
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+            decoration: BoxDecoration(
+              color: color.withOpacity(isSelected ? 0.9 : 0.8),
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 6,
+                  height: 6,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
                   ),
-                  overflow: TextOverflow.ellipsis,
                 ),
-              ),
-            ],
+                const SizedBox(width: 3),
+                Expanded(
+                  child: Text(
+                    '$categoryName ${_formatDuration(entry.value)}',
+                    style: const TextStyle(
+                      fontSize: 8,
+                      color: Colors.white,
+                      fontWeight: FontWeight.w500,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
           ),
         );
       }).toList(),
@@ -302,15 +334,15 @@ class MonthViewWidget extends StatelessWidget {
     bool isInCurrentMonth,
   ) {
     if (isSelected) {
-      return Theme.of(context).primaryColor;
+      return const Color(0xFF2563EB); // 现代蓝色
     }
 
     if (isToday) {
-      return Theme.of(context).primaryColor.withOpacity(0.3);
+      return const Color(0xFF3B82F6).withOpacity(0.3); // 浅蓝色
     }
 
     if (!isInCurrentMonth) {
-      return Colors.grey[50]!;
+      return const Color(0xFFF9FAFB); // 极浅灰色
     }
 
     return Colors.white;

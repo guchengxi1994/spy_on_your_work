@@ -39,15 +39,15 @@ class AppUsageEvent extends CalendarEventData<AppUsageTimeSlot> {
   static Color getCategoryColor(IAppTypes category) {
     switch (category) {
       case IAppTypes.work:
-        return const Color(0xFF4285F4); // 蓝色
+        return const Color(0xFF2563EB); // 现代蓝色
       case IAppTypes.study:
-        return const Color(0xFF34A853); // 绿色
+        return const Color(0xFF059669); // 绿色
       case IAppTypes.joy:
-        return const Color(0xFFFBBC04); // 黄色
+        return const Color(0xFFDC2626); // 红色
       case IAppTypes.others:
-        return const Color(0xFFEA4335); // 红色
+        return const Color(0xFF7C3AED); // 紫色
       case IAppTypes.unknown:
-        return const Color(0xFF9AA0A6); // 灰色
+        return const Color(0xFF6B7280); // 灰色
     }
   }
 

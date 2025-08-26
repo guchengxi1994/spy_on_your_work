@@ -55,7 +55,7 @@ class DayViewWidget extends StatelessWidget {
                   },
               dayTitleBuilder: (date) => _buildDayTitle(date),
               hourIndicatorSettings: const HourIndicatorSettings(
-                height: 20,
+                height: 1,
                 color: Colors.grey,
               ),
             ),
@@ -78,12 +78,12 @@ class DayViewWidget extends StatelessWidget {
       child: Row(
         children: [
           // 返回按钮
-          if (onBackToMonth != null)
-            IconButton(
-              icon: const Icon(Icons.arrow_back),
-              onPressed: onBackToMonth,
-              tooltip: '返回月视图',
-            ),
+          // if (onBackToMonth != null)
+          //   IconButton(
+          //     icon: const Icon(Icons.arrow_back),
+          //     onPressed: onBackToMonth,
+          //     tooltip: '返回月视图',
+          //   ),
           // 日期标题
           Expanded(
             child: Column(
@@ -127,52 +127,61 @@ class DayViewWidget extends StatelessWidget {
   Widget _buildEventTile(AppUsageEvent event, double height) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 2, vertical: 1),
-      padding: const EdgeInsets.all(8),
+      padding: const EdgeInsets.all(6),
       decoration: BoxDecoration(
         color: event.color,
-        borderRadius: BorderRadius.circular(4),
+        borderRadius: BorderRadius.circular(6),
         border: Border.all(color: event.color.withOpacity(0.8), width: 1),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // 应用名称
-          Text(
-            event.timeSlot.appName,
-            style: const TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-              fontSize: 12,
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-          const SizedBox(height: 2),
-          // 时间段
-          Text(
-            event.timeRangeText,
-            style: const TextStyle(color: Colors.white, fontSize: 10),
-          ),
-          // 持续时间（如果空间足够）
-          if (height > 60) ...[
-            const SizedBox(height: 2),
-            Text(
-              event.durationText,
-              style: const TextStyle(color: Colors.white70, fontSize: 10),
-            ),
-          ],
-          // 窗口标题（如果空间足够且有标题）
-          if (height > 80 && event.timeSlot.title.isNotEmpty) ...[
-            const SizedBox(height: 2),
-            Text(
-              event.timeSlot.title,
-              style: const TextStyle(color: Colors.white70, fontSize: 9),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
-        ],
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final availableHeight = constraints.maxHeight;
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // 应用名称
+              Text(
+                event.timeSlot.appName,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 11,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              if (availableHeight > 25) ...[
+                const SizedBox(height: 2),
+                // 时间段
+                Text(
+                  event.timeRangeText,
+                  style: const TextStyle(color: Colors.white, fontSize: 9),
+                ),
+              ],
+              // 持续时间（如果空间足够）
+              if (availableHeight > 45) ...[
+                const SizedBox(height: 1),
+                Text(
+                  event.durationText,
+                  style: const TextStyle(color: Colors.white70, fontSize: 8),
+                ),
+              ],
+              // 窗口标题（如果空间足够且有标题）
+              if (availableHeight > 65 && event.timeSlot.title.isNotEmpty) ...[
+                const SizedBox(height: 1),
+                Flexible(
+                  child: Text(
+                    event.timeSlot.title,
+                    style: const TextStyle(color: Colors.white70, fontSize: 7),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ],
+          );
+        },
       ),
     );
   }
@@ -191,44 +200,79 @@ class DayViewWidget extends StatelessWidget {
           (categoryStats[slot.category] ?? Duration.zero) + slot.duration;
     }
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.end,
-      children: [
-        // 总时长
-        Text(
-          '总计: ${_formatDuration(totalDuration)}',
-          style: Theme.of(
-            context,
-          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 8),
-        // 分类统计
-        ...categoryStats.entries.where((e) => e.value.inMinutes > 0).map((
-          entry,
-        ) {
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 4),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: 12,
-                  height: 12,
-                  decoration: BoxDecoration(
-                    color: AppUsageEvent.getCategoryColor(entry.key),
-                    shape: BoxShape.circle,
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.blue[50],
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.blue[200]!, width: 1),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          // 总时长
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: Colors.blue[600],
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Text(
+              '总计: ${_formatDuration(totalDuration)}',
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 14,
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          // 分类统计
+          ...categoryStats.entries.where((e) => e.value.inMinutes > 0).map((
+            entry,
+          ) {
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 6),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: AppUsageEvent.getCategoryColor(
+                    entry.key,
+                  ).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(
+                    color: AppUsageEvent.getCategoryColor(
+                      entry.key,
+                    ).withOpacity(0.3),
                   ),
                 ),
-                const SizedBox(width: 6),
-                Text(
-                  '${AppUsageEvent.getCategoryDisplayName(entry.key)}: ${_formatDuration(entry.value)}',
-                  style: Theme.of(context).textTheme.bodySmall,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 12,
+                      height: 12,
+                      decoration: BoxDecoration(
+                        color: AppUsageEvent.getCategoryColor(entry.key),
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      '${AppUsageEvent.getCategoryDisplayName(entry.key)}: ${_formatDuration(entry.value)}',
+                      style: TextStyle(
+                        color: AppUsageEvent.getCategoryColor(entry.key),
+                        fontWeight: FontWeight.w600,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-          );
-        }).toList(),
-      ],
+              ),
+            );
+          }).toList(),
+        ],
+      ),
     );
   }
 
