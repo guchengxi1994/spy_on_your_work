@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:spy_on_your_work/src/app/application/application_notifier.dart';
 import 'package:spy_on_your_work/src/app/application/application_state.dart';
 import 'package:spy_on_your_work/src/app/app_catalog/app_catalog_notifier_simple.dart';
-import 'package:spy_on_your_work/src/app/app_catalog/components/category_card.dart';
+import 'package:spy_on_your_work/src/app/app_catalog/components/optimized_category_card.dart';
 import 'package:spy_on_your_work/src/isar/apps.dart';
 
 class AppCatalogScreen extends ConsumerStatefulWidget {
@@ -40,12 +40,26 @@ class _AppCatalogScreenState extends ConsumerState<AppCatalogScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
-        title: const Text(
-          '应用分类',
-          style: TextStyle(
-            color: Color(0xFF1F2937),
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
+        title: Text.rich(
+          TextSpan(
+            children: [
+              const TextSpan(
+                text: '应用分类',
+                style: TextStyle(
+                  color: Color(0xFF1F2937),
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              TextSpan(
+                text: '  ·  拖拽应用进行分类管理',
+                style: TextStyle(
+                  color: Colors.grey[600],
+                  fontSize: 14,
+                  fontWeight: FontWeight.normal,
+                ),
+              ),
+            ],
           ),
         ),
         backgroundColor: Colors.transparent,
@@ -98,95 +112,264 @@ class _AppCatalogScreenState extends ConsumerState<AppCatalogScreen> {
     AppCatalogState catalogState,
     ApplicationState applicationState,
   ) {
-    return CustomScrollView(
-      slivers: [
-        // 页面标题和统计
-        SliverToBoxAdapter(
-          child: Container(
-            padding: const EdgeInsets.all(20.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  '应用分类管理',
-                  style: TextStyle(
-                    color: Color(0xFF1F2937),
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  '拖拽应用到不同分类中进行管理',
-                  style: TextStyle(color: Colors.grey[600], fontSize: 16),
-                ),
-                const SizedBox(height: 16),
-                // 统计信息
-                Row(
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isWideScreen = screenWidth > 800; // 宽屏判断
+    final isCompactMode = screenWidth < 600; // 紧凑模式判断
+    final isMediumScreen = screenWidth >= 600 && screenWidth <= 800; // 中等屏幕
+
+    if (isWideScreen) {
+      // 宽屏：左右布局
+      return Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // 左侧：统计和未分类应用
+          Expanded(
+            flex: 2,
+            child: SingleChildScrollView(
+              child: Container(
+                padding: const EdgeInsets.all(20.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildStatCard(
-                      '已分类',
-                      '${catalogState.totalCategorizedCount}',
-                      Icons.category_outlined,
-                      const Color(0xFF10B981),
-                    ),
-                    const SizedBox(width: 12),
-                    _buildStatCard(
-                      '未分类',
-                      '${catalogState.uncategorizedApps.length}',
-                      Icons.inbox_outlined,
-                      const Color(0xFF6B7280),
-                    ),
-                    const SizedBox(width: 12),
-                    _buildStatCard(
-                      '总计',
-                      '${applicationState.applicationUsages.length}',
-                      Icons.apps_outlined,
-                      const Color(0xFF6366F1),
-                    ),
+                    // 统计信息
+                    _buildStatsSection(catalogState, applicationState),
+                    const SizedBox(height: 24),
+                    // 未分类应用区域（unknown分类的应用）
+                    if (catalogState
+                            .categorizedApps[IAppTypes.unknown]
+                            ?.isNotEmpty ==
+                        true)
+                      DragSourceArea(
+                        apps: catalogState.categorizedApps[IAppTypes.unknown]!,
+                        title: '待分类应用',
+                        icon: Icons.inbox_outlined,
+                        color: Colors.grey,
+                      ),
                   ],
                 ),
-              ],
+              ),
             ),
           ),
-        ),
-        // 未分类应用区域
-        if (catalogState.uncategorizedApps.isNotEmpty)
+          // 右侧：分类卡片
+          Expanded(
+            flex: 3,
+            child: Container(
+              padding: const EdgeInsets.all(20.0),
+              child: _buildCategoryGrid(
+                catalogState,
+                isCompactMode,
+                isMediumScreen,
+              ),
+            ),
+          ),
+        ],
+      );
+    } else {
+      // 窄屏：垂直布局
+      return CustomScrollView(
+        slivers: [
+          // 统计信息
           SliverToBoxAdapter(
-            child: UncategorizedAppsArea(apps: catalogState.uncategorizedApps),
-          ),
-        // 分类卡片网格
-        SliverPadding(
-          padding: const EdgeInsets.symmetric(horizontal: 8),
-          sliver: SliverGrid(
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              childAspectRatio: 1.2,
-              crossAxisSpacing: 0,
-              mainAxisSpacing: 0,
+            child: Container(
+              padding: const EdgeInsets.all(16.0),
+              child: _buildStatsSection(catalogState, applicationState),
             ),
-            delegate: SliverChildBuilderDelegate((context, index) {
-              final type = IAppTypes.values[index];
-              final apps = catalogState.categorizedApps[type] ?? [];
-              return CategoryCard(
-                type: type,
-                apps: apps,
-                onAppMoved: (app, targetType) {
-                  ref
-                      .read(appCatalogNotifierProvider.notifier)
-                      .moveAppToCategory(app, targetType);
-                  // 更新未分类应用列表
-                  Future.delayed(const Duration(milliseconds: 500), () {
-                    _updateUncategorizedApps();
-                  });
-                },
-              );
-            }, childCount: IAppTypes.values.length),
           ),
+          // 未分类应用区域
+          if (catalogState.categorizedApps[IAppTypes.unknown]?.isNotEmpty ==
+              true)
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                child: DragSourceArea(
+                  apps: catalogState.categorizedApps[IAppTypes.unknown]!,
+                  title: '待分类应用',
+                  icon: Icons.inbox_outlined,
+                  color: Colors.grey,
+                ),
+              ),
+            ),
+          // 分类卡片网格
+          SliverPadding(
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            sliver: _buildCategoryGridSliver(
+              catalogState,
+              isCompactMode,
+              isMediumScreen,
+            ),
+          ),
+          // 底部间距
+          const SliverToBoxAdapter(child: SizedBox(height: 20)),
+        ],
+      );
+    }
+  }
+
+  Widget _buildStatsSection(
+    AppCatalogState catalogState,
+    ApplicationState applicationState,
+  ) {
+    // 不包括 unknown 分类的已分类应用数量
+    final categorizedCount = catalogState.categorizedApps.entries
+        .where((entry) => entry.key != IAppTypes.unknown)
+        .fold(0, (sum, entry) => sum + entry.value.length);
+
+    final unknownCount =
+        catalogState.categorizedApps[IAppTypes.unknown]?.length ?? 0;
+
+    return Column(
+      children: [
+        Row(
+          children: [
+            _buildStatCard(
+              '已分类',
+              '$categorizedCount',
+              Icons.category_outlined,
+              const Color(0xFF10B981),
+            ),
+            const SizedBox(width: 12),
+            _buildStatCard(
+              '待分类',
+              '$unknownCount',
+              Icons.inbox_outlined,
+              const Color(0xFF6B7280),
+            ),
+          ],
         ),
-        // 底部间距
-        const SliverToBoxAdapter(child: SizedBox(height: 20)),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            _buildStatCard(
+              '总计',
+              '${applicationState.applicationUsages.length}',
+              Icons.apps_outlined,
+              const Color(0xFF6366F1),
+            ),
+            const SizedBox(width: 12),
+            _buildStatCard(
+              '分类数',
+              '${IAppTypes.values.where((t) => t != IAppTypes.unknown).length}',
+              Icons.widgets_outlined,
+              const Color(0xFF8B5CF6),
+            ),
+          ],
+        ),
       ],
+    );
+  }
+
+  Widget _buildCategoryGrid(
+    AppCatalogState catalogState,
+    bool isCompactMode,
+    bool isMediumScreen,
+  ) {
+    // 排除 unknown 分类
+    final categories = IAppTypes.values
+        .where((type) => type != IAppTypes.unknown)
+        .toList();
+
+    // 响应式网格参数
+    int crossAxisCount;
+    double childAspectRatio;
+
+    if (isCompactMode) {
+      // 紧凑模式：单列，高度较小
+      crossAxisCount = 1;
+      childAspectRatio = 5.0; // 增加比例，让卡片更紧凑
+    } else if (isMediumScreen) {
+      // 中等屏幕：单列，适中高度
+      crossAxisCount = 1;
+      childAspectRatio = 3.0; // 适中的高度比例
+    } else {
+      // 宽屏：双列，正常高度
+      crossAxisCount = 2;
+      childAspectRatio = 1.4; // 略微增加比例，减少高度
+    }
+
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(), // 禁用内部滚动
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: crossAxisCount,
+        childAspectRatio: childAspectRatio,
+        crossAxisSpacing: 8,
+        mainAxisSpacing: 8,
+      ),
+      itemCount: categories.length,
+      itemBuilder: (context, index) {
+        final type = categories[index];
+        final apps = catalogState.categorizedApps[type] ?? [];
+        return OptimizedCategoryCard(
+          type: type,
+          apps: apps,
+          isCompactMode: isCompactMode || isMediumScreen, // 中等屏幕也使用紧凑模式
+          onAppMoved: (app, targetType) {
+            ref
+                .read(appCatalogNotifierProvider.notifier)
+                .moveAppToCategory(app, targetType);
+            // 更新未分类应用列表
+            Future.delayed(const Duration(milliseconds: 500), () {
+              _updateUncategorizedApps();
+            });
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildCategoryGridSliver(
+    AppCatalogState catalogState,
+    bool isCompactMode,
+    bool isMediumScreen,
+  ) {
+    // 排除 unknown 分类
+    final categories = IAppTypes.values
+        .where((type) => type != IAppTypes.unknown)
+        .toList();
+
+    // 响应式网格参数
+    int crossAxisCount;
+    double childAspectRatio;
+
+    if (isCompactMode) {
+      // 紧凑模式：单列，高度较小
+      crossAxisCount = 1;
+      childAspectRatio = 5.0;
+    } else if (isMediumScreen) {
+      // 中等屏幕：单列，适中高度
+      crossAxisCount = 1;
+      childAspectRatio = 3.0;
+    } else {
+      // 宽屏：双列，正常高度
+      crossAxisCount = 2;
+      childAspectRatio = 1.4;
+    }
+
+    return SliverGrid(
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: crossAxisCount,
+        childAspectRatio: childAspectRatio,
+        crossAxisSpacing: 8,
+        mainAxisSpacing: 8,
+      ),
+      delegate: SliverChildBuilderDelegate((context, index) {
+        final type = categories[index];
+        final apps = catalogState.categorizedApps[type] ?? [];
+        return OptimizedCategoryCard(
+          type: type,
+          apps: apps,
+          isCompactMode: isCompactMode || isMediumScreen,
+          onAppMoved: (app, targetType) {
+            ref
+                .read(appCatalogNotifierProvider.notifier)
+                .moveAppToCategory(app, targetType);
+            // 更新未分类应用列表
+            Future.delayed(const Duration(milliseconds: 500), () {
+              _updateUncategorizedApps();
+            });
+          },
+        );
+      }, childCount: categories.length),
     );
   }
 

@@ -153,15 +153,28 @@ class AppCatalogNotifier extends StateNotifier<AppCatalogState> {
   /// 根据当前应用使用情况更新未分类应用列表
   void updateUncategorizedApps(List<ApplicationUsage> allApps) {
     final categorizedAppNames = <String>{};
-    for (final apps in state.categorizedApps.values) {
-      categorizedAppNames.addAll(apps.map((app) => app.name));
+    // 不包括 unknown 分类，因为这是默认的未分类
+    for (final entry in state.categorizedApps.entries) {
+      if (entry.key != IAppTypes.unknown) {
+        categorizedAppNames.addAll(entry.value.map((app) => app.name));
+      }
     }
 
+    // 所有未分类的应用都放入 unknown 分类
     final uncategorized = allApps
         .where((app) => !categorizedAppNames.contains(app.name))
         .toList();
 
-    state = state.copyWith(uncategorizedApps: uncategorized);
+    // 更新 unknown 分类
+    final Map<IAppTypes, List<ApplicationUsage>> newCategorizedApps = Map.from(
+      state.categorizedApps,
+    );
+    newCategorizedApps[IAppTypes.unknown] = uncategorized;
+
+    state = state.copyWith(
+      categorizedApps: newCategorizedApps,
+      uncategorizedApps: [], // 不再需要单独的未分类列表
+    );
   }
 }
 
@@ -177,6 +190,7 @@ const Map<IAppTypes, String> categoryDisplayNames = {
   IAppTypes.study: '学习',
   IAppTypes.joy: '娱乐',
   IAppTypes.others: '其他',
+  IAppTypes.unknown: '未分类',
 };
 
 /// 分类图标映射
@@ -185,6 +199,7 @@ final Map<IAppTypes, IconData> categoryIcons = {
   IAppTypes.study: Icons.school_outlined,
   IAppTypes.joy: Icons.sports_esports_outlined,
   IAppTypes.others: Icons.apps_outlined,
+  IAppTypes.unknown: Icons.help_outline,
 };
 
 /// 分类颜色映射
@@ -193,4 +208,5 @@ final Map<IAppTypes, Color> categoryColors = {
   IAppTypes.study: const Color(0xFF10B981), // 绿色
   IAppTypes.joy: const Color(0xFFF59E0B), // 橙色
   IAppTypes.others: const Color(0xFF6B7280), // 灰色
+  IAppTypes.unknown: const Color(0xFF9CA3AF), // 浅灰色
 };
