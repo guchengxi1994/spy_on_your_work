@@ -17,12 +17,22 @@ const IApplicationSchema = CollectionSchema(
   name: r'IApplication',
   id: 1149367852465944996,
   properties: {
-    r'createAt': PropertySchema(id: 0, name: r'createAt', type: IsarType.long),
-    r'icon': PropertySchema(id: 1, name: r'icon', type: IsarType.string),
-    r'name': PropertySchema(id: 2, name: r'name', type: IsarType.string),
-    r'path': PropertySchema(id: 3, name: r'path', type: IsarType.string),
+    r'analyseWhenUsing': PropertySchema(
+      id: 0,
+      name: r'analyseWhenUsing',
+      type: IsarType.bool,
+    ),
+    r'createAt': PropertySchema(id: 1, name: r'createAt', type: IsarType.long),
+    r'icon': PropertySchema(id: 2, name: r'icon', type: IsarType.string),
+    r'name': PropertySchema(id: 3, name: r'name', type: IsarType.string),
+    r'path': PropertySchema(id: 4, name: r'path', type: IsarType.string),
+    r'screenshotWhenUsing': PropertySchema(
+      id: 5,
+      name: r'screenshotWhenUsing',
+      type: IsarType.bool,
+    ),
     r'type': PropertySchema(
-      id: 4,
+      id: 6,
       name: r'type',
       type: IsarType.byte,
       enumMap: _IApplicationtypeEnumValueMap,
@@ -67,11 +77,13 @@ void _iApplicationSerialize(
   List<int> offsets,
   Map<Type, List<int>> allOffsets,
 ) {
-  writer.writeLong(offsets[0], object.createAt);
-  writer.writeString(offsets[1], object.icon);
-  writer.writeString(offsets[2], object.name);
-  writer.writeString(offsets[3], object.path);
-  writer.writeByte(offsets[4], object.type.index);
+  writer.writeBool(offsets[0], object.analyseWhenUsing);
+  writer.writeLong(offsets[1], object.createAt);
+  writer.writeString(offsets[2], object.icon);
+  writer.writeString(offsets[3], object.name);
+  writer.writeString(offsets[4], object.path);
+  writer.writeBool(offsets[5], object.screenshotWhenUsing);
+  writer.writeByte(offsets[6], object.type.index);
 }
 
 IApplication _iApplicationDeserialize(
@@ -81,13 +93,15 @@ IApplication _iApplicationDeserialize(
   Map<Type, List<int>> allOffsets,
 ) {
   final object = IApplication();
-  object.createAt = reader.readLong(offsets[0]);
-  object.icon = reader.readStringOrNull(offsets[1]);
+  object.analyseWhenUsing = reader.readBool(offsets[0]);
+  object.createAt = reader.readLong(offsets[1]);
+  object.icon = reader.readStringOrNull(offsets[2]);
   object.id = id;
-  object.name = reader.readString(offsets[2]);
-  object.path = reader.readString(offsets[3]);
+  object.name = reader.readString(offsets[3]);
+  object.path = reader.readString(offsets[4]);
+  object.screenshotWhenUsing = reader.readBool(offsets[5]);
   object.type =
-      _IApplicationtypeValueEnumMap[reader.readByteOrNull(offsets[4])] ??
+      _IApplicationtypeValueEnumMap[reader.readByteOrNull(offsets[6])] ??
       IAppTypes.work;
   return object;
 }
@@ -100,14 +114,18 @@ P _iApplicationDeserializeProp<P>(
 ) {
   switch (propertyId) {
     case 0:
-      return (reader.readLong(offset)) as P;
+      return (reader.readBool(offset)) as P;
     case 1:
-      return (reader.readStringOrNull(offset)) as P;
+      return (reader.readLong(offset)) as P;
     case 2:
-      return (reader.readString(offset)) as P;
+      return (reader.readStringOrNull(offset)) as P;
     case 3:
       return (reader.readString(offset)) as P;
     case 4:
+      return (reader.readString(offset)) as P;
+    case 5:
+      return (reader.readBool(offset)) as P;
+    case 6:
       return (_IApplicationtypeValueEnumMap[reader.readByteOrNull(offset)] ??
               IAppTypes.work)
           as P;
@@ -231,6 +249,15 @@ extension IApplicationQueryWhere
 
 extension IApplicationQueryFilter
     on QueryBuilder<IApplication, IApplication, QFilterCondition> {
+  QueryBuilder<IApplication, IApplication, QAfterFilterCondition>
+  analyseWhenUsingEqualTo(bool value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'analyseWhenUsing', value: value),
+      );
+    });
+  }
+
   QueryBuilder<IApplication, IApplication, QAfterFilterCondition>
   createAtEqualTo(int value) {
     return QueryBuilder.apply(this, (query) {
@@ -803,6 +830,15 @@ extension IApplicationQueryFilter
     });
   }
 
+  QueryBuilder<IApplication, IApplication, QAfterFilterCondition>
+  screenshotWhenUsingEqualTo(bool value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(
+        FilterCondition.equalTo(property: r'screenshotWhenUsing', value: value),
+      );
+    });
+  }
+
   QueryBuilder<IApplication, IApplication, QAfterFilterCondition> typeEqualTo(
     IAppTypes value,
   ) {
@@ -869,6 +905,20 @@ extension IApplicationQueryLinks
 
 extension IApplicationQuerySortBy
     on QueryBuilder<IApplication, IApplication, QSortBy> {
+  QueryBuilder<IApplication, IApplication, QAfterSortBy>
+  sortByAnalyseWhenUsing() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'analyseWhenUsing', Sort.asc);
+    });
+  }
+
+  QueryBuilder<IApplication, IApplication, QAfterSortBy>
+  sortByAnalyseWhenUsingDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'analyseWhenUsing', Sort.desc);
+    });
+  }
+
   QueryBuilder<IApplication, IApplication, QAfterSortBy> sortByCreateAt() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'createAt', Sort.asc);
@@ -917,6 +967,20 @@ extension IApplicationQuerySortBy
     });
   }
 
+  QueryBuilder<IApplication, IApplication, QAfterSortBy>
+  sortByScreenshotWhenUsing() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'screenshotWhenUsing', Sort.asc);
+    });
+  }
+
+  QueryBuilder<IApplication, IApplication, QAfterSortBy>
+  sortByScreenshotWhenUsingDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'screenshotWhenUsing', Sort.desc);
+    });
+  }
+
   QueryBuilder<IApplication, IApplication, QAfterSortBy> sortByType() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'type', Sort.asc);
@@ -932,6 +996,20 @@ extension IApplicationQuerySortBy
 
 extension IApplicationQuerySortThenBy
     on QueryBuilder<IApplication, IApplication, QSortThenBy> {
+  QueryBuilder<IApplication, IApplication, QAfterSortBy>
+  thenByAnalyseWhenUsing() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'analyseWhenUsing', Sort.asc);
+    });
+  }
+
+  QueryBuilder<IApplication, IApplication, QAfterSortBy>
+  thenByAnalyseWhenUsingDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'analyseWhenUsing', Sort.desc);
+    });
+  }
+
   QueryBuilder<IApplication, IApplication, QAfterSortBy> thenByCreateAt() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'createAt', Sort.asc);
@@ -992,6 +1070,20 @@ extension IApplicationQuerySortThenBy
     });
   }
 
+  QueryBuilder<IApplication, IApplication, QAfterSortBy>
+  thenByScreenshotWhenUsing() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'screenshotWhenUsing', Sort.asc);
+    });
+  }
+
+  QueryBuilder<IApplication, IApplication, QAfterSortBy>
+  thenByScreenshotWhenUsingDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'screenshotWhenUsing', Sort.desc);
+    });
+  }
+
   QueryBuilder<IApplication, IApplication, QAfterSortBy> thenByType() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'type', Sort.asc);
@@ -1007,6 +1099,13 @@ extension IApplicationQuerySortThenBy
 
 extension IApplicationQueryWhereDistinct
     on QueryBuilder<IApplication, IApplication, QDistinct> {
+  QueryBuilder<IApplication, IApplication, QDistinct>
+  distinctByAnalyseWhenUsing() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'analyseWhenUsing');
+    });
+  }
+
   QueryBuilder<IApplication, IApplication, QDistinct> distinctByCreateAt() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'createAt');
@@ -1037,6 +1136,13 @@ extension IApplicationQueryWhereDistinct
     });
   }
 
+  QueryBuilder<IApplication, IApplication, QDistinct>
+  distinctByScreenshotWhenUsing() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'screenshotWhenUsing');
+    });
+  }
+
   QueryBuilder<IApplication, IApplication, QDistinct> distinctByType() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'type');
@@ -1049,6 +1155,13 @@ extension IApplicationQueryProperty
   QueryBuilder<IApplication, int, QQueryOperations> idProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'id');
+    });
+  }
+
+  QueryBuilder<IApplication, bool, QQueryOperations>
+  analyseWhenUsingProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'analyseWhenUsing');
     });
   }
 
@@ -1073,6 +1186,13 @@ extension IApplicationQueryProperty
   QueryBuilder<IApplication, String, QQueryOperations> pathProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'path');
+    });
+  }
+
+  QueryBuilder<IApplication, bool, QQueryOperations>
+  screenshotWhenUsingProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'screenshotWhenUsing');
     });
   }
 

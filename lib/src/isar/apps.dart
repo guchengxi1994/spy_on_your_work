@@ -17,4 +17,7 @@ class IApplication {
 
   @enumerated
   IAppTypes type = IAppTypes.unknown;
+
+  late bool screenshotWhenUsing = false;
+  late bool analyseWhenUsing = false;
 }
