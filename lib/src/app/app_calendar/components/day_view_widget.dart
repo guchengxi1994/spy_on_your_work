@@ -127,61 +127,22 @@ class DayViewWidget extends StatelessWidget {
   Widget _buildEventTile(AppUsageEvent event, double height) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 2, vertical: 1),
-      padding: const EdgeInsets.all(6),
+      padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
         color: event.color,
-        borderRadius: BorderRadius.circular(6),
+        borderRadius: BorderRadius.circular(4),
         border: Border.all(color: event.color.withOpacity(0.8), width: 1),
       ),
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final availableHeight = constraints.maxHeight;
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // 应用名称
-              Text(
-                event.timeSlot.appName,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 11,
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-              if (availableHeight > 25) ...[
-                const SizedBox(height: 2),
-                // 时间段
-                Text(
-                  event.timeRangeText,
-                  style: const TextStyle(color: Colors.white, fontSize: 9),
-                ),
-              ],
-              // 持续时间（如果空间足够）
-              if (availableHeight > 45) ...[
-                const SizedBox(height: 1),
-                Text(
-                  event.durationText,
-                  style: const TextStyle(color: Colors.white70, fontSize: 8),
-                ),
-              ],
-              // 窗口标题（如果空间足够且有标题）
-              if (availableHeight > 65 && event.timeSlot.title.isNotEmpty) ...[
-                const SizedBox(height: 1),
-                Flexible(
-                  child: Text(
-                    event.timeSlot.title,
-                    style: const TextStyle(color: Colors.white70, fontSize: 7),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ],
-            ],
-          );
-        },
+      child: Center(
+        child: Text(
+          event.durationText,
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+            fontSize: 10,
+          ),
+          textAlign: TextAlign.center,
+        ),
       ),
     );
   }
@@ -320,8 +281,8 @@ class DayViewWidget extends StatelessWidget {
         title: Row(
           children: [
             Container(
-              width: 16,
-              height: 16,
+              width: 20,
+              height: 20,
               decoration: BoxDecoration(
                 color: AppUsageEvent.getCategoryColor(
                   appEvent.timeSlot.category,
@@ -329,24 +290,40 @@ class DayViewWidget extends StatelessWidget {
                 shape: BoxShape.circle,
               ),
             ),
-            const SizedBox(width: 8),
-            Expanded(child: Text(appEvent.timeSlot.appName)),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    appEvent.timeSlot.appName,
+                    style: const TextStyle(fontSize: 16),
+                  ),
+                  Text(
+                    AppUsageEvent.getCategoryDisplayName(
+                      appEvent.timeSlot.category,
+                    ),
+                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                  ),
+                ],
+              ),
+            ),
           ],
         ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildDetailRow(Icons.schedule, '时间段', appEvent.timeRangeText),
-            _buildDetailRow(Icons.timer, '持续时长', appEvent.durationText),
-            _buildDetailRow(
-              Icons.category,
-              '分类',
-              AppUsageEvent.getCategoryDisplayName(appEvent.timeSlot.category),
-            ),
-            if (appEvent.timeSlot.title.isNotEmpty)
-              _buildDetailRow(Icons.title, '窗口标题', appEvent.timeSlot.title),
-          ],
+        content: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _buildDetailRow(Icons.schedule, '时间段', appEvent.timeRangeText),
+              const SizedBox(height: 8),
+              _buildDetailRow(Icons.timer, '持续时长', appEvent.durationText),
+              if (appEvent.timeSlot.title.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                _buildDetailRow(Icons.title, '窗口标题', appEvent.timeSlot.title),
+              ],
+            ],
+          ),
         ),
         actions: [
           TextButton(
