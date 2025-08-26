@@ -1,11 +1,9 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:spy_on_your_work/src/app/application/application_state.dart';
 
 /// 统计面板组件
 class StatsPanel extends StatelessWidget {
-  final ApplicationState appState;
   final bool isNarrowScreen;
   final bool isExpanded;
   final Animation<double> slideAnimation;
@@ -15,7 +13,6 @@ class StatsPanel extends StatelessWidget {
 
   const StatsPanel({
     super.key,
-    required this.appState,
     required this.isNarrowScreen,
     required this.isExpanded,
     required this.slideAnimation,
@@ -118,48 +115,51 @@ class StatsPanel extends StatelessWidget {
 
   /// 构建统计内容
   Widget _buildContent(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const Icon(
-                Icons.analytics_outlined,
-                color: Color(0xFF6366F1),
-                size: 24,
-              ),
-              const SizedBox(width: 8),
-              const Text(
-                '跳转',
-                style: TextStyle(
-                  color: Color(0xFF1F2937),
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
+    return Material(
+      color: Colors.transparent,
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(
+                  Icons.analytics_outlined,
+                  color: Color(0xFF6366F1),
+                  size: 24,
+                ),
+                const SizedBox(width: 8),
+                const Text(
+                  '配置',
+                  style: TextStyle(
+                    color: Color(0xFF1F2937),
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const Spacer(),
+                IconButton(
+                  onPressed: onToggle,
+                  icon: const Icon(Icons.close, color: Colors.grey),
+                  iconSize: 20,
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Expanded(
+              child: SingleChildScrollView(
+                child: Wrap(
+                  children: [
+                    _buildStatsItem('分类', null, () {
+                      context.go('/catalog');
+                    }),
+                  ],
                 ),
               ),
-              const Spacer(),
-              IconButton(
-                onPressed: onToggle,
-                icon: const Icon(Icons.close, color: Colors.grey),
-                iconSize: 20,
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Expanded(
-            child: SingleChildScrollView(
-              child: Wrap(
-                children: [
-                  _buildStatsItem('分类', null, () {
-                    context.go('/catalog');
-                  }),
-                ],
-              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

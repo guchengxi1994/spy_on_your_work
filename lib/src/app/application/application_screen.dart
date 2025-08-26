@@ -3,10 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:spy_on_your_work/src/app/application/application_notifier.dart';
 import 'package:spy_on_your_work/src/app/application/application_state.dart';
-import 'package:spy_on_your_work/src/app/application/components/cached_app_icon.dart';
 import 'package:spy_on_your_work/src/app/application/components/application_list_item.dart';
-import 'package:spy_on_your_work/src/app/application/components/stats_panel.dart';
-import 'package:spy_on_your_work/src/app/application/components/stats_toggle_button.dart';
 import 'package:spy_on_your_work/src/app/application/components/app_detail_dialog.dart';
 import 'package:spy_on_your_work/src/app/application/components/stat_card.dart';
 
@@ -22,12 +19,6 @@ class _ApplicationScreenState extends ConsumerState<ApplicationScreen>
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
 
-  // 功能面板状态
-  bool _isStatsExpanded = false;
-  late AnimationController _statsAnimationController;
-  late Animation<double> _statsSlideAnimation;
-  late Animation<double> _statsOpacityAnimation;
-
   @override
   void initState() {
     super.initState();
@@ -39,34 +30,11 @@ class _ApplicationScreenState extends ConsumerState<ApplicationScreen>
       CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
     );
     _animationController.forward();
-
-    // 初始化统计面板动画
-    _statsAnimationController = AnimationController(
-      duration: const Duration(milliseconds: 300),
-      vsync: this,
-    );
-    _statsSlideAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(
-        parent: _statsAnimationController,
-        curve: Curves.easeInOut,
-      ),
-    );
-    _statsOpacityAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(
-        parent: _statsAnimationController,
-        curve: Curves.easeInOut,
-      ),
-    );
   }
 
   @override
   void dispose() {
     _animationController.dispose();
-    _statsAnimationController.dispose();
-    // 清理图标缓存，防止内存泄漏
-    if (IconCacheManager.cacheSize > 100) {
-      IconCacheManager.clearCache();
-    }
     super.dispose();
   }
 
@@ -74,8 +42,6 @@ class _ApplicationScreenState extends ConsumerState<ApplicationScreen>
   Widget build(BuildContext context) {
     final appState = ref.watch(applicationNotifierProvider);
     final notifier = ref.read(applicationNotifierProvider.notifier);
-    final screenWidth = MediaQuery.of(context).size.width;
-    final isNarrowScreen = screenWidth < 600;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
@@ -84,24 +50,7 @@ class _ApplicationScreenState extends ConsumerState<ApplicationScreen>
         child: Stack(
           children: [
             // 主要内容
-            _buildMainContent(appState, isNarrowScreen),
-            // 统计面板
-            StatsPanel(
-              appState: appState,
-              isNarrowScreen: isNarrowScreen,
-              isExpanded: _isStatsExpanded,
-              slideAnimation: _statsSlideAnimation,
-              opacityAnimation: _statsOpacityAnimation,
-              onToggle: _toggleStatsPanel,
-              formatDuration: _formatDuration,
-            ),
-            // 统计按钮
-            StatsToggleButton(
-              isNarrowScreen: isNarrowScreen,
-              isExpanded: _isStatsExpanded,
-              slideAnimation: _statsSlideAnimation,
-              onToggle: _toggleStatsPanel,
-            ),
+            _buildMainContent(appState),
             // 模糊背景和启动按钮（仅在未启动时显示）
             if (!appState.isSpyOn) _buildStartOverlay(appState, notifier),
           ],
@@ -110,7 +59,7 @@ class _ApplicationScreenState extends ConsumerState<ApplicationScreen>
     );
   }
 
-  Widget _buildMainContent(ApplicationState appState, bool isNarrowScreen) {
+  Widget _buildMainContent(ApplicationState appState) {
     return Container(
       padding: const EdgeInsets.all(10.0),
       child: Column(
@@ -140,19 +89,6 @@ class _ApplicationScreenState extends ConsumerState<ApplicationScreen>
         ],
       ),
     );
-  }
-
-  /// 切换统计面板显示状态
-  void _toggleStatsPanel() {
-    setState(() {
-      _isStatsExpanded = !_isStatsExpanded;
-    });
-
-    if (_isStatsExpanded) {
-      _statsAnimationController.forward();
-    } else {
-      _statsAnimationController.reverse();
-    }
   }
 
   Widget _buildStartOverlay(

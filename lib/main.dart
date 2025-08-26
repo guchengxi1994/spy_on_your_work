@@ -33,21 +33,5 @@ Future<void> main() async {
     await windowManager.focus();
   });
 
-  runApp(
-    ToastificationWrapper(
-      child: ProviderScope(
-        child: MaterialApp.router(
-          routerConfig: router,
-          title: "FocusTrack",
-          theme: ThemeData(
-            colorScheme: ColorScheme.fromSeed(
-              seedColor: const Color.fromARGB(255, 128, 180, 217),
-              brightness: Brightness.light,
-            ),
-          ),
-          debugShowCheckedModeBanner: false,
-        ),
-      ),
-    ),
-  );
+  runApp(ToastificationWrapper(child: ProviderScope(child: App())));
 }
