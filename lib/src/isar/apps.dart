@@ -2,7 +2,7 @@ import 'package:isar_community/isar.dart';
 
 part 'apps.g.dart';
 
-enum IAppTypes { work, study, joy, others }
+enum IAppTypes { work, study, joy, others, unknown }
 
 /* 为了区分rust传过来的 `Application`
     取名为 `IApplication`， I代表Isar
@@ -16,5 +16,5 @@ class IApplication {
   late String? icon;
 
   @enumerated
-  IAppTypes type = IAppTypes.others;
+  IAppTypes type = IAppTypes.unknown;
 }

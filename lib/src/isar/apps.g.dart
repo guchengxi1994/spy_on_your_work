@@ -121,12 +121,14 @@ const _IApplicationtypeEnumValueMap = {
   'study': 1,
   'joy': 2,
   'others': 3,
+  'unknown': 4,
 };
 const _IApplicationtypeValueEnumMap = {
   0: IAppTypes.work,
   1: IAppTypes.study,
   2: IAppTypes.joy,
   3: IAppTypes.others,
+  4: IAppTypes.unknown,
 };
 
 Id _iApplicationGetId(IApplication object) {
