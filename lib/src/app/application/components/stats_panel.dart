@@ -159,6 +159,9 @@ class StatsPanel extends StatelessWidget {
                     _buildStatsItem('使用统计', null, () {
                       context.go('/chart');
                     }),
+                    _buildStatsItem('日历视图', null, () {
+                      context.go('/calendar');
+                    }),
                     // 可以在这里添加更多统计项
                   ],
                 ),
@@ -184,6 +187,10 @@ class StatsPanel extends StatelessWidget {
       case '使用统计':
         iconData = Icons.pie_chart_outline;
         description = '应用使用时间统计';
+        break;
+      case '日历视图':
+        iconData = Icons.calendar_month_outlined;
+        description = '按日期查看使用统计';
         break;
       default:
         iconData = Icons.folder_outlined;
