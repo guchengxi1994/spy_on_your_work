@@ -263,4 +263,44 @@ class IsarDatabase {
       await isar!.appScreenshotRecords.put(record);
     });
   }
+
+  /// 为指定应用添加截图记录
+  Future<void> addScreenshotRecord(int appId, String screenshotPath) async {
+    final record = AppScreenshotRecord()
+      ..appId = appId
+      ..path = screenshotPath
+      ..createAt = DateTime.now().millisecondsSinceEpoch;
+
+    await insertScreenshot(record);
+    logger.info('添加截图记录: appId=$appId, path=$screenshotPath');
+  }
+
+  /// 根据应用ID获取截图记录
+  Future<List<AppScreenshotRecord>> getScreenshotsByAppId(int appId) async {
+    if (isar == null) await initialDatabase();
+
+    return await isar!.appScreenshotRecords
+        .filter()
+        .appIdEqualTo(appId)
+        .sortByCreateAtDesc()
+        .findAll();
+  }
+
+  /// 删除指定应用的所有截图记录
+  Future<void> deleteScreenshotsByAppId(int appId) async {
+    if (isar == null) await initialDatabase();
+
+    await isar!.writeTxn(() async {
+      await isar!.appScreenshotRecords.filter().appIdEqualTo(appId).deleteAll();
+    });
+  }
+
+  /// 删除指定的截图记录
+  Future<void> deleteScreenshot(int screenshotId) async {
+    if (isar == null) await initialDatabase();
+
+    await isar!.writeTxn(() async {
+      await isar!.appScreenshotRecords.delete(screenshotId);
+    });
+  }
 }

@@ -92,19 +92,26 @@ class AppDetailNotifier
   /// 加载应用截图
   Future<List<String>> _loadScreenshots(int appId) async {
     try {
-      // 这里应该从文件系统或数据库中加载截图路径
-      // 暂时返回模拟数据，您可以根据实际存储方式修改
-      final screenshotDir = Directory('screenshots/app_$appId');
-      if (await screenshotDir.exists()) {
-        final files = await screenshotDir.list().toList();
-        return files
-            .where((file) => file is File && file.path.endsWith('.png'))
-            .map((file) => file.path)
-            .toList();
+      // 从数据库查询截图记录
+      final screenshotRecords = await database.getScreenshotsByAppId(appId);
+
+      // 过滤出存在的文件路径
+      final List<String> validPaths = [];
+      for (final record in screenshotRecords) {
+        final file = File(record.path);
+        if (await file.exists()) {
+          validPaths.add(record.path);
+        } else {
+          // 文件不存在，从数据库中删除记录
+          logger.warning('截图文件不存在，删除数据库记录: ${record.path}');
+          await database.deleteScreenshot(record.id);
+        }
       }
-      return [];
-    } catch (e) {
-      logger.warning('加载截图失败: $e');
+
+      logger.info('加载应用ID $appId 的截图数量: ${validPaths.length}');
+      return validPaths;
+    } catch (e, stackTrace) {
+      logger.severe('加载截图失败: $e', e, stackTrace);
       return [];
     }
   }
@@ -156,16 +163,29 @@ class AppDetailNotifier
     if (application == null) return;
 
     try {
+      // 获取所有截图记录
+      final screenshotRecords = await database.getScreenshotsByAppId(
+        application.id,
+      );
+
       // 删除截图文件
-      final screenshotDir = Directory('screenshots/app_${application.id}');
-      if (await screenshotDir.exists()) {
-        await screenshotDir.delete(recursive: true);
+      for (final record in screenshotRecords) {
+        final file = File(record.path);
+        if (await file.exists()) {
+          await file.delete();
+          logger.info('已删除截图文件: ${record.path}');
+        }
       }
+
+      // 从数据库中删除所有记录
+      await database.deleteScreenshotsByAppId(application.id);
 
       // 刷新状态
       ref.invalidateSelf();
 
-      logger.info('清除截图数据成功: ${application.name}');
+      logger.info(
+        '清除截图数据成功: ${application.name}，删除数量: ${screenshotRecords.length}',
+      );
     } catch (e, stackTrace) {
       logger.severe('清除截图数据失败', e, stackTrace);
       rethrow;
