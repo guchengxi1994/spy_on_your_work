@@ -36,7 +36,8 @@ Future<void> main() async {
   runApp(
     ToastificationWrapper(
       child: ProviderScope(
-        child: MaterialApp(
+        child: MaterialApp.router(
+          routerConfig: router,
           title: "FocusTrack",
           theme: ThemeData(
             colorScheme: ColorScheme.fromSeed(
@@ -45,7 +46,6 @@ Future<void> main() async {
             ),
           ),
           debugShowCheckedModeBanner: false,
-          home: MyApp(),
         ),
       ),
     ),

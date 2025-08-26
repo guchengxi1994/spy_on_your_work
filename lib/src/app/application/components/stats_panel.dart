@@ -1,5 +1,6 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:spy_on_your_work/src/app/application/application_state.dart';
 
 /// 统计面板组件
@@ -80,7 +81,7 @@ class StatsPanel extends StatelessWidget {
                             ),
                           ],
                         ),
-                        child: _buildContent(),
+                        child: _buildContent(context),
                       ),
                     ),
                   );
@@ -116,7 +117,7 @@ class StatsPanel extends StatelessWidget {
   }
 
   /// 构建统计内容
-  Widget _buildContent() {
+  Widget _buildContent(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(20),
       child: Column(
@@ -131,7 +132,7 @@ class StatsPanel extends StatelessWidget {
               ),
               const SizedBox(width: 8),
               const Text(
-                '应用统计',
+                '跳转',
                 style: TextStyle(
                   color: Color(0xFF1F2937),
                   fontSize: 18,
@@ -149,39 +150,11 @@ class StatsPanel extends StatelessWidget {
           const SizedBox(height: 16),
           Expanded(
             child: SingleChildScrollView(
-              child: Column(
+              child: Wrap(
                 children: [
-                  _buildStatsItem(
-                    '工作应用',
-                    '3 个',
-                    '2.5h',
-                    const Color(0xFF3B82F6),
-                    Icons.work_outline,
-                  ),
-                  const SizedBox(height: 12),
-                  _buildStatsItem(
-                    '娱乐应用',
-                    '2 个',
-                    '1.2h',
-                    const Color(0xFF10B981),
-                    Icons.games_outlined,
-                  ),
-                  const SizedBox(height: 12),
-                  _buildStatsItem(
-                    '学习应用',
-                    '1 个',
-                    '0.8h',
-                    const Color(0xFF8B5CF6),
-                    Icons.school_outlined,
-                  ),
-                  const SizedBox(height: 12),
-                  _buildStatsItem(
-                    '其他应用',
-                    '${appState.applicationUsages.length} 个',
-                    formatDuration(appState.totalUsageTime),
-                    const Color(0xFF6B7280),
-                    Icons.apps,
-                  ),
+                  _buildStatsItem('分类', null, () {
+                    context.go('/catalog');
+                  }),
                 ],
               ),
             ),
@@ -192,52 +165,35 @@ class StatsPanel extends StatelessWidget {
   }
 
   /// 构建统计项
-  Widget _buildStatsItem(
-    String title,
-    String count,
-    String duration,
-    Color color,
-    IconData icon,
-  ) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+  Widget _buildStatsItem(String title, String? iconPath, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Material(
+        elevation: 4,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.3), width: 1),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(8),
+        child: Column(
+          children: [
+            Container(
+              width: 60,
+              height: 60,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(width: 1),
+              ),
+              child: iconPath != null ? Image.asset(iconPath) : Icon(Icons.abc),
             ),
-            child: Icon(icon, color: color, size: 16),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: TextStyle(
-                    color: color,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  '$count · $duration',
-                  style: TextStyle(color: color.withOpacity(0.8), fontSize: 11),
-                ),
-              ],
+            const SizedBox(height: 8),
+            Text(
+              title,
+              style: const TextStyle(
+                color: Color(0xFF1F2937),
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

@@ -1,16 +1,23 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:spy_on_your_work/src/app/app_catalog/app_catalog_screen.dart';
 import 'package:spy_on_your_work/src/app/application/application_screen.dart';
 
-class MyApp extends StatefulWidget {
-  const MyApp({super.key});
-
-  @override
-  State<MyApp> createState() => _MyAppState();
-}
-
-class _MyAppState extends State<MyApp> {
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(body: ApplicationScreen());
-  }
-}
+final GoRouter router = GoRouter(
+  routes: <RouteBase>[
+    GoRoute(
+      path: '/',
+      builder: (BuildContext context, GoRouterState state) {
+        return const ApplicationScreen();
+      },
+      routes: <RouteBase>[
+        GoRoute(
+          path: 'catalog',
+          builder: (BuildContext context, GoRouterState state) {
+            return const AppCatalogScreen();
+          },
+        ),
+      ],
+    ),
+  ],
+);
