@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:spy_on_your_work/src/app/app_catalog/app_catalog_screen.dart';
 import 'package:spy_on_your_work/src/app/app_chart/app_chart_screen.dart';
+import 'package:spy_on_your_work/src/app/app_calendar/app_calendar_screen.dart';
 import 'package:spy_on_your_work/src/app/app_detail/app_detail_screen.dart';
 import 'package:spy_on_your_work/src/app/application/application_screen.dart';
 import 'package:spy_on_your_work/src/app/application/components/stats_panel.dart';
@@ -32,6 +33,12 @@ final GoRouter router = GoRouter(
           path: '/chart',
           builder: (BuildContext context, GoRouterState state) {
             return const AppChartScreen();
+          },
+        ),
+        GoRoute(
+          path: '/calendar',
+          builder: (BuildContext context, GoRouterState state) {
+            return const AppCalendarScreen();
           },
         ),
         GoRoute(
