@@ -46,6 +46,7 @@ class AppCatalogState {
 
 /// 应用分类 Notifier
 class AppCatalogNotifier extends StateNotifier<AppCatalogState> {
+  // ignore: unused_field
   final IsarDatabase _database;
 
   // 内存中的分类存储（临时解决方案）

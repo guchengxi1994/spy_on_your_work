@@ -99,7 +99,7 @@ class _ApplicationScreenState extends ConsumerState<ApplicationScreen>
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
         child: Container(
-          color: Colors.white.withOpacity(0.3),
+          color: Colors.white.withValues(alpha: 0.3),
           child: Center(
             child: Container(
               padding: const EdgeInsets.all(32),
@@ -109,7 +109,7 @@ class _ApplicationScreenState extends ConsumerState<ApplicationScreen>
                 border: Border.all(color: const Color(0xFFE5E7EB)),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
+                    color: Colors.black.withValues(alpha: 0.1),
                     blurRadius: 20,
                     offset: const Offset(0, 10),
                   ),

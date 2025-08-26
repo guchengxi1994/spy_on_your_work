@@ -33,9 +33,9 @@ class _OptimizedCategoryCardState extends State<OptimizedCategoryCard> {
     final color = categoryColors[widget.type] ?? Colors.grey;
 
     return DragTarget<ApplicationUsage>(
-      onWillAccept: (data) => data != null,
-      onAccept: (app) {
-        widget.onAppMoved(app, widget.type);
+      // onWillAccept: (data) => data != null,
+      onAcceptWithDetails: (app) {
+        widget.onAppMoved(app.data, widget.type);
         setState(() {
           _isDragOver = false;
         });
@@ -60,7 +60,7 @@ class _OptimizedCategoryCardState extends State<OptimizedCategoryCard> {
           width: double.infinity, // 占满容器宽度
           height: double.infinity, // 占满容器高度
           decoration: BoxDecoration(
-            color: _isDragOver ? color.withOpacity(0.1) : Colors.white,
+            color: _isDragOver ? color.withValues(alpha: 0.1) : Colors.white,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
               color: _isDragOver ? color : const Color(0xFFE5E7EB),
@@ -68,7 +68,7 @@ class _OptimizedCategoryCardState extends State<OptimizedCategoryCard> {
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(_isDragOver ? 0.1 : 0.05),
+                color: Colors.black.withValues(alpha: _isDragOver ? 0.1 : 0.05),
                 blurRadius: _isDragOver ? 8 : 4,
                 offset: const Offset(0, 2),
               ),
@@ -83,7 +83,7 @@ class _OptimizedCategoryCardState extends State<OptimizedCategoryCard> {
                   Container(
                     padding: EdgeInsets.all(widget.isCompactMode ? 6 : 8),
                     decoration: BoxDecoration(
-                      color: color.withOpacity(0.1),
+                      color: color.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(6),
                     ),
                     child: Icon(
@@ -272,7 +272,7 @@ class DragSourceArea extends StatelessWidget {
         border: Border.all(color: const Color(0xFFE5E7EB)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 4,
             offset: const Offset(0, 2),
           ),
@@ -286,7 +286,7 @@ class DragSourceArea extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.1),
+                  color: color.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Icon(icon, color: color, size: 20),

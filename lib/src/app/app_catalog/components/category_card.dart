@@ -31,9 +31,9 @@ class _CategoryCardState extends State<CategoryCard> {
     final color = categoryColors[widget.type] ?? Colors.grey;
 
     return DragTarget<ApplicationUsage>(
-      onWillAccept: (data) => data != null,
-      onAccept: (app) {
-        widget.onAppMoved(app, widget.type);
+      // onWillAccept: (data) => data != null,
+      onAcceptWithDetails: (app) {
+        widget.onAppMoved(app.data, widget.type);
         setState(() {
           _isDragOver = false;
         });
@@ -56,7 +56,7 @@ class _CategoryCardState extends State<CategoryCard> {
           margin: const EdgeInsets.all(8),
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: _isDragOver ? color.withOpacity(0.1) : Colors.white,
+            color: _isDragOver ? color.withValues(alpha: 0.1) : Colors.white,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
               color: _isDragOver ? color : const Color(0xFFE5E7EB),
@@ -64,7 +64,7 @@ class _CategoryCardState extends State<CategoryCard> {
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(_isDragOver ? 0.1 : 0.05),
+                color: Colors.black.withValues(alpha: _isDragOver ? 0.1 : 0.05),
                 blurRadius: _isDragOver ? 12 : 8,
                 offset: const Offset(0, 2),
               ),
@@ -79,7 +79,7 @@ class _CategoryCardState extends State<CategoryCard> {
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: color.withOpacity(0.1),
+                      color: color.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Icon(icon, color: color, size: 20),
@@ -231,7 +231,7 @@ class UncategorizedAppsArea extends StatelessWidget {
         border: Border.all(color: const Color(0xFFE5E7EB)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -245,7 +245,7 @@ class UncategorizedAppsArea extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: Colors.grey.withOpacity(0.1),
+                  color: Colors.grey.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: const Icon(

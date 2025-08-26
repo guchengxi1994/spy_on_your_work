@@ -40,7 +40,9 @@ class StatsPanel extends StatelessWidget {
                   sigmaY: 5.0 * opacityAnimation.value,
                 ),
                 child: Container(
-                  color: Colors.black.withOpacity(0.2 * opacityAnimation.value),
+                  color: Colors.black.withValues(
+                    alpha: 0.2 * opacityAnimation.value,
+                  ),
                 ),
               ),
               // 点击空白区域关闭面板
@@ -70,7 +72,7 @@ class StatsPanel extends StatelessWidget {
                           borderRadius: _getBorderRadius(isNarrowScreen),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.15),
+                              color: Colors.black.withValues(alpha: 0.15),
                               blurRadius: 20,
                               offset: isNarrowScreen
                                   ? const Offset(0, 4)
@@ -178,7 +180,7 @@ class StatsPanel extends StatelessWidget {
           border: Border.all(color: const Color(0xFFE5E7EB), width: 1),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withValues(alpha: 0.05),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
@@ -199,7 +201,7 @@ class StatsPanel extends StatelessWidget {
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFF6366F1).withOpacity(0.2),
+                    color: const Color(0xFF6366F1).withValues(alpha: 0.2),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),
