@@ -6,6 +6,7 @@ import 'package:spy_on_your_work/src/app/app_detail/app_detail_state.dart';
 import 'package:spy_on_your_work/src/app/app_detail/components/screenshot_gallery.dart';
 import 'package:spy_on_your_work/src/app/app_detail/components/analysis_results_list.dart';
 import 'package:spy_on_your_work/src/app/app_detail/components/app_config_section.dart';
+import 'package:spy_on_your_work/src/app/application/components/cached_app_icon.dart';
 import 'package:spy_on_your_work/src/isar/apps.dart';
 
 class AppDetailScreen extends ConsumerStatefulWidget {
@@ -227,14 +228,7 @@ class _AppDetailScreenState extends ConsumerState<AppDetailScreen>
               ),
             ),
             child: application.icon != null
-                ? ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
-                    child: const Icon(
-                      Icons.apps,
-                      color: Colors.white,
-                      size: 30,
-                    ), // TODO: 解码base64图标
-                  )
+                ? CachedAppIcon(iconData: application.icon, size: 30)
                 : const Icon(Icons.apps, color: Colors.white, size: 30),
           ),
           const SizedBox(width: 16),

@@ -43,7 +43,7 @@ class AppDetailNotifier
       );
     } catch (e, stackTrace) {
       logger.severe('初始化应用详细配置失败', e, stackTrace);
-      throw e;
+      rethrow;
     }
   }
 
@@ -85,7 +85,7 @@ class AppDetailNotifier
       logger.info('更新应用配置成功: ${application.name}');
     } catch (e, stackTrace) {
       logger.severe('更新应用配置失败', e, stackTrace);
-      throw e;
+      rethrow;
     }
   }
 
@@ -168,7 +168,7 @@ class AppDetailNotifier
       logger.info('清除截图数据成功: ${application.name}');
     } catch (e, stackTrace) {
       logger.severe('清除截图数据失败', e, stackTrace);
-      throw e;
+      rethrow;
     }
   }
 
@@ -184,7 +184,7 @@ class AppDetailNotifier
       logger.info('清除分析数据成功');
     } catch (e, stackTrace) {
       logger.severe('清除分析数据失败', e, stackTrace);
-      throw e;
+      rethrow;
     }
   }
 }

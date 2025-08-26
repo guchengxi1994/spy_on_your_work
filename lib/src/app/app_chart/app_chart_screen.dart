@@ -298,7 +298,7 @@ class _AppChartScreenState extends ConsumerState<AppChartScreen> {
                 barTouchData: BarTouchData(
                   touchTooltipData: BarTouchTooltipData(
                     getTooltipColor: (group) =>
-                        Colors.blueGrey.withOpacity(0.9),
+                        Colors.blueGrey.withValues(alpha: 0.9),
                     getTooltipItem: (group, groupIndex, rod, rodIndex) {
                       final category = state.nonZeroCategories.keys.elementAt(
                         groupIndex,
@@ -370,7 +370,7 @@ class _AppChartScreenState extends ConsumerState<AppChartScreen> {
                   horizontalInterval: _getMaxY(state) / 5,
                   getDrawingHorizontalLine: (value) {
                     return FlLine(
-                      color: Colors.grey.withOpacity(0.2),
+                      color: Colors.grey.withValues(alpha: 0.2),
                       strokeWidth: 1,
                     );
                   },
@@ -502,7 +502,7 @@ class _AppChartScreenState extends ConsumerState<AppChartScreen> {
               ],
             ),
           );
-        }).toList(),
+        }),
       ],
     );
   }
