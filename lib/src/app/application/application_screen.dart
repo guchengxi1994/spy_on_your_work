@@ -5,7 +5,6 @@ import 'package:go_router/go_router.dart';
 import 'package:spy_on_your_work/src/app/application/application_notifier.dart';
 import 'package:spy_on_your_work/src/app/application/application_state.dart';
 import 'package:spy_on_your_work/src/app/application/components/application_list_item.dart';
-import 'package:spy_on_your_work/src/app/application/components/app_detail_dialog.dart';
 import 'package:spy_on_your_work/src/app/application/components/stat_card.dart';
 
 class ApplicationScreen extends ConsumerStatefulWidget {
