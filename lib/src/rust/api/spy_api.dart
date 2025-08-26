@@ -13,3 +13,15 @@ Stream<Application> applicationInfoStream() =>
 void startSpy() => RustLib.instance.api.crateApiSpyApiStartSpy();
 
 bool getSpyStatus() => RustLib.instance.api.crateApiSpyApiGetSpyStatus();
+
+void initSavePath({required String path}) =>
+    RustLib.instance.api.crateApiSpyApiInitSavePath(path: path);
+
+void initScreenshotApps({required List<String> v}) =>
+    RustLib.instance.api.crateApiSpyApiInitScreenshotApps(v: v);
+
+void insertScreenshotApps({required String v}) =>
+    RustLib.instance.api.crateApiSpyApiInsertScreenshotApps(v: v);
+
+void removeScreenshotApps({required String v}) =>
+    RustLib.instance.api.crateApiSpyApiRemoveScreenshotApps(v: v);

@@ -4,6 +4,7 @@ use std::io::Write;
 use std::os::windows::ffi::OsStringExt;
 use std::time::{SystemTime, UNIX_EPOCH};
 
+use image::{ImageBuffer, Rgba};
 use windows::Win32::Foundation::{HWND, RECT};
 use windows::Win32::Graphics::Gdi::{
     BitBlt, CreateCompatibleBitmap, CreateCompatibleDC, CreateSolidBrush, DeleteDC, DeleteObject,
@@ -64,8 +65,8 @@ impl WindowCapture {
             let file_path = std::path::Path::new(folder_path).join(&filename);
             let full_path = file_path.to_string_lossy().to_string();
 
-            // 保存为BMP
-            Self::save_bitmap_to_file(hbitmap, width, height, &full_path)?;
+            // 保存为PNG
+            Self::save_bitmap_to_png(hbitmap, width, height, &full_path)?;
 
             Ok(full_path)
         }
@@ -100,7 +101,7 @@ impl WindowCapture {
             .unwrap_or_default()
             .as_secs();
 
-        format!("{}_{}.bmp", safe_title, timestamp)
+        format!("{}_{}.png", safe_title, timestamp)
     }
 
     /// 创建窗口的位图
@@ -160,6 +161,7 @@ impl WindowCapture {
     }
 
     /// 将位图保存为BMP文件
+    #[allow(dead_code)]
     unsafe fn save_bitmap_to_file(
         hbitmap: HBITMAP,
         _width: i32,
@@ -236,6 +238,74 @@ impl WindowCapture {
             .map_err(|e| format!("写入信息头失败: {}", e))?;
         file.write_all(&buffer)
             .map_err(|e| format!("写入位图数据失败: {}", e))?;
+
+        // 清理位图资源
+        let _ = DeleteObject(hbitmap.into());
+
+        Ok(())
+    }
+
+    /// 将位图保存为PNG文件
+    unsafe fn save_bitmap_to_png(
+        hbitmap: HBITMAP,
+        width: i32,
+        height: i32,
+        path: &str,
+    ) -> Result<(), String> {
+        use std::ffi::c_void;
+
+        let mut bmp: BITMAP = std::mem::zeroed();
+        if GetObjectW(
+            hbitmap.into(),
+            std::mem::size_of::<BITMAP>() as i32,
+            Some(&mut bmp as *mut _ as *mut c_void),
+        ) == 0
+        {
+            return Err("获取位图对象信息失败".to_string());
+        }
+
+        let image_size = (bmp.bmWidthBytes * bmp.bmHeight) as u32;
+        let mut buffer = vec![0u8; image_size as usize];
+
+        if GetBitmapBits(
+            hbitmap,
+            image_size as i32,
+            buffer.as_mut_ptr() as *mut c_void,
+        ) == 0
+        {
+            return Err("获取位图数据失败".to_string());
+        }
+
+        // 转换BGRA到RGBA格式
+        let mut rgba_buffer = Vec::with_capacity((width * height * 4) as usize);
+
+        for y in 0..height {
+            for x in 0..width {
+                let idx = ((y * width + x) * 4) as usize;
+                if idx + 3 < buffer.len() {
+                    let b = buffer[idx];
+                    let g = buffer[idx + 1];
+                    let r = buffer[idx + 2];
+                    let a = buffer[idx + 3];
+
+                    // BGRA -> RGBA
+                    rgba_buffer.push(r);
+                    rgba_buffer.push(g);
+                    rgba_buffer.push(b);
+                    rgba_buffer.push(a);
+                }
+            }
+        }
+
+        // 创建图像缓冲区
+        let img_buffer =
+            ImageBuffer::<Rgba<u8>, Vec<u8>>::from_raw(width as u32, height as u32, rgba_buffer)
+                .ok_or("创建图像缓冲区失败")?;
+
+        // 保存为PNG
+        img_buffer
+            .save(path)
+            .map_err(|e| format!("保存PNG文件失败: {}", e))?;
 
         // 清理位图资源
         let _ = DeleteObject(hbitmap.into());

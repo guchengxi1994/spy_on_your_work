@@ -1,8 +1,12 @@
+import 'dart:io';
+
 import 'package:isar_community/isar.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:spy_on_your_work/src/common/logger.dart';
 import 'package:spy_on_your_work/src/isar/app_record.dart';
+import 'package:spy_on_your_work/src/isar/app_screenshot_record.dart';
 import 'package:spy_on_your_work/src/isar/apps.dart';
+import 'package:spy_on_your_work/src/rust/api/spy_api.dart' show initSavePath;
 
 class IsarDatabase {
   // ignore: avoid_init_to_null
@@ -19,12 +23,16 @@ class IsarDatabase {
     }
     final dir = await getApplicationSupportDirectory();
     logger.info("database save to ${dir.path}");
+    final screenDir = "${dir.path}/screen";
+    Directory(screenDir).createSync(recursive: true);
+    initSavePath(path: screenDir);
     isar = await Isar.open(schemas, name: "soyw", directory: dir.path);
   }
 
   late List<CollectionSchema<Object>> schemas = [
     IApplicationSchema,
     AppRecordSchema,
+    AppScreenshotRecordSchema,
   ];
 
   /// 获取当天的应用使用记录
@@ -47,6 +55,14 @@ class IsarDatabase {
     if (isar == null) await initialDatabase();
 
     return await isar!.iApplications.filter().idEqualTo(appId).findFirst();
+  }
+
+  Future<List<IApplication>> getScreenShotApplication() async {
+    if (isar == null) await initialDatabase();
+    return await isar!.iApplications
+        .filter()
+        .screenshotWhenUsingEqualTo(true)
+        .findAll();
   }
 
   /// 获取或创建应用信息
@@ -239,5 +255,12 @@ class IsarDatabase {
     }
 
     return categoryUsage;
+  }
+
+  Future insertScreenshot(AppScreenshotRecord record) async {
+    if (isar == null) await initialDatabase();
+    await isar!.writeTxn(() async {
+      await isar!.appScreenshotRecords.put(record);
+    });
   }
 }

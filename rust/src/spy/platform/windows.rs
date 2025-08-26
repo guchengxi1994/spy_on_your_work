@@ -14,6 +14,7 @@ use windows::Win32::UI::WindowsAndMessaging::{
 
 use crate::spy::model::Application;
 use crate::spy::model::ApplicationProvider;
+use crate::spy::platform::WindowCapture;
 
 impl ApplicationProvider for Application {
     fn from_process(hwnd: HWND) -> Option<Application> {
@@ -80,11 +81,35 @@ impl Application {
 
             // 只要有标题或路径中的任意一个，就创建Application
             if !title.is_empty() || !path.is_empty() {
+                let mut screen_shot_path = None;
+                {
+                    if super::is_screenshot_app(name.clone()) {
+                        // save screenshot
+                        let save_folder;
+                        {
+                            save_folder = crate::api::spy_api::SCREENSHOT_SAVE_FOLDER
+                                .lock()
+                                .unwrap()
+                                .clone();
+                        }
+                        let e = WindowCapture::capture_window(hwnd, &save_folder);
+                        match e {
+                            Ok(p) => {
+                                screen_shot_path = Some(p);
+                            }
+                            Err(_e) => {
+                                println!("Save screenshot file error: {}", _e);
+                            }
+                        }
+                    }
+                }
+
                 Some(Application {
                     icon,
                     name,
                     title,
                     path,
+                    screen_shot_path,
                 })
             } else {
                 None

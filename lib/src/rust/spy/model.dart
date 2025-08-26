@@ -11,17 +11,23 @@ class Application {
   final String name;
   final String title;
   final String path;
+  final String? screenShotPath;
 
   const Application({
     this.icon,
     required this.name,
     required this.title,
     required this.path,
+    this.screenShotPath,
   });
 
   @override
   int get hashCode =>
-      icon.hashCode ^ name.hashCode ^ title.hashCode ^ path.hashCode;
+      icon.hashCode ^
+      name.hashCode ^
+      title.hashCode ^
+      path.hashCode ^
+      screenShotPath.hashCode;
 
   @override
   bool operator ==(Object other) =>
@@ -31,5 +37,6 @@ class Application {
           icon == other.icon &&
           name == other.name &&
           title == other.title &&
-          path == other.path;
+          path == other.path &&
+          screenShotPath == other.screenShotPath;
 }

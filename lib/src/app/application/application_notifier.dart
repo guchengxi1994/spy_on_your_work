@@ -3,8 +3,10 @@ import 'package:isar_community/isar.dart';
 import 'package:spy_on_your_work/src/app/application/application_state.dart';
 import 'package:spy_on_your_work/src/common/logger.dart';
 import 'package:spy_on_your_work/src/isar/app_record.dart';
+import 'package:spy_on_your_work/src/isar/app_screenshot_record.dart';
 import 'package:spy_on_your_work/src/isar/database.dart';
 import 'package:spy_on_your_work/src/rust/api/spy_api.dart' as api;
+import 'package:spy_on_your_work/src/rust/spy/model.dart';
 
 class ApplicationNotifier extends Notifier<ApplicationState> {
   DateTime? _currentSessionStart;
@@ -22,6 +24,12 @@ class ApplicationNotifier extends Notifier<ApplicationState> {
         "running app: ${event.name}, title: ${event.title}, path: ${event.path}",
       );
       await _handleAppSwitch(event);
+    });
+    // 获取开启screenshot的app
+    Future.microtask(() async {
+      await database.getScreenShotApplication().then((v) {
+        api.initScreenshotApps(v: v.map((v) => v.name).toList());
+      });
     });
 
     return ApplicationState(isSpyOn: api.getSpyStatus());
@@ -92,7 +100,7 @@ class ApplicationNotifier extends Notifier<ApplicationState> {
     }
   }
 
-  Future<void> _handleAppSwitch(dynamic app) async {
+  Future<void> _handleAppSwitch(Application app) async {
     final now = DateTime.now();
 
     // 如果当前有正在跑的应用，先结束它的会话
@@ -137,6 +145,14 @@ class ApplicationNotifier extends Notifier<ApplicationState> {
         totalUsage: Duration.zero,
         lastUsed: now,
         sessionCount: 1,
+      );
+    }
+    // 如果有截图的话，添加截图数据
+    if (app.screenShotPath != null) {
+      await database.insertScreenshot(
+        AppScreenshotRecord()
+          ..appId = appInfo.id
+          ..path = app.screenShotPath!,
       );
     }
 
