@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:open_file/open_file.dart';
+import 'package:path_provider/path_provider.dart';
 import 'dart:io';
 
+import 'package:spy_on_your_work/src/isar/app_screenshot_record.dart';
+
 class ScreenshotGallery extends StatefulWidget {
-  final List<String> screenshots;
+  final List<AppScreenshotRecord> screenshots;
   final VoidCallback onClearAll;
 
   const ScreenshotGallery({
@@ -56,6 +60,18 @@ class _ScreenshotGalleryState extends State<ScreenshotGallery> {
           ),
           const Spacer(),
           TextButton.icon(
+            onPressed: () async {
+              final dir = await getApplicationSupportDirectory();
+              OpenFile.open("${dir.path}/screen");
+            },
+            icon: const Icon(Icons.folder_open, size: 16),
+            label: const Text('打开截图位置'),
+            style: TextButton.styleFrom(
+              foregroundColor: Colors.green[600],
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            ),
+          ),
+          TextButton.icon(
             onPressed: widget.onClearAll,
             icon: const Icon(Icons.delete_outline, size: 16),
             label: const Text('清空'),
@@ -80,7 +96,7 @@ class _ScreenshotGalleryState extends State<ScreenshotGallery> {
       ),
       itemCount: widget.screenshots.length,
       itemBuilder: (context, index) {
-        return _buildScreenshotItem(widget.screenshots[index], index);
+        return _buildScreenshotItem(widget.screenshots[index].path, index);
       },
     );
   }
@@ -145,7 +161,9 @@ class _ScreenshotGalleryState extends State<ScreenshotGallery> {
                 left: 8,
                 right: 8,
                 child: Text(
-                  _getScreenshotTimeFromPath(screenshotPath),
+                  DateTime.fromMillisecondsSinceEpoch(
+                    widget.screenshots[index].createAt,
+                  ).toLocal().toString().split(".").first,
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 12,
@@ -237,31 +255,6 @@ class _ScreenshotGalleryState extends State<ScreenshotGallery> {
     );
   }
 
-  String _getScreenshotTimeFromPath(String path) {
-    // 从文件路径中提取时间信息
-    // 这里需要根据您的文件命名规则来解析
-    // 假设文件名包含时间戳，如: screenshot_20240826_143052.png
-    try {
-      final fileName = path.split('/').last;
-      if (fileName.contains('_')) {
-        final parts = fileName.split('_');
-        if (parts.length >= 3) {
-          final date = parts[1];
-          final time = parts[2].split('.')[0];
-          final year = date.substring(0, 4);
-          final month = date.substring(4, 6);
-          final day = date.substring(6, 8);
-          final hour = time.substring(0, 2);
-          final minute = time.substring(2, 4);
-          return '$year-$month-$day $hour:$minute';
-        }
-      }
-    } catch (e) {
-      // 解析失败时返回默认值
-    }
-    return '未知时间';
-  }
-
   /// 显示截图预览弹窗
   void _showScreenshotPreview(String screenshotPath, int initialIndex) {
     showDialog(
@@ -278,7 +271,7 @@ class _ScreenshotGalleryState extends State<ScreenshotGallery> {
 
 /// 截图预览弹窗
 class ScreenshotPreviewDialog extends StatefulWidget {
-  final List<String> screenshots;
+  final List<AppScreenshotRecord> screenshots;
   final int initialIndex;
 
   const ScreenshotPreviewDialog({
@@ -325,7 +318,7 @@ class _ScreenshotPreviewDialogState extends State<ScreenshotPreviewDialog> {
               });
             },
             itemBuilder: (context, index) {
-              return _buildScreenshotPage(widget.screenshots[index]);
+              return _buildScreenshotPage(widget.screenshots[index].path);
             },
           ),
 
@@ -407,8 +400,10 @@ class _ScreenshotPreviewDialogState extends State<ScreenshotPreviewDialog> {
 
   Widget _buildBottomBar() {
     final currentScreenshot = widget.screenshots[_currentIndex];
-    final timeString = _getScreenshotTimeFromPath(currentScreenshot);
-    final fileName = currentScreenshot.split('/').last;
+    final timeString = DateTime.fromMillisecondsSinceEpoch(
+      widget.screenshots[_currentIndex].createAt,
+    ).toLocal().toString().split(".").first;
+    final fileName = currentScreenshot.path.split('/').last;
 
     return Container(
       padding: EdgeInsets.only(
@@ -535,29 +530,5 @@ class _ScreenshotPreviewDialogState extends State<ScreenshotPreviewDialog> {
         curve: Curves.easeInOut,
       );
     }
-  }
-
-  String _getScreenshotTimeFromPath(String path) {
-    // 从文件路径中提取时间信息
-    // 这里需要根据您的文件命名规则来解析
-    try {
-      final fileName = path.split('/').last;
-      if (fileName.contains('_')) {
-        final parts = fileName.split('_');
-        if (parts.length >= 3) {
-          final date = parts[1];
-          final time = parts[2].split('.')[0];
-          final year = date.substring(0, 4);
-          final month = date.substring(4, 6);
-          final day = date.substring(6, 8);
-          final hour = time.substring(0, 2);
-          final minute = time.substring(2, 4);
-          return '$year-$month-$day $hour:$minute';
-        }
-      }
-    } catch (e) {
-      // 解析失败时返回默认值
-    }
-    return '未知时间';
   }
 }
