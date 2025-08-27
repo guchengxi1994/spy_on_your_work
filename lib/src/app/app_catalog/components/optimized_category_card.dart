@@ -157,8 +157,10 @@ class _OptimizedCategoryCardState extends State<OptimizedCategoryCard> {
     }
 
     // 限制显示的应用数量，避免过度拥挤
-    final displayApps = widget.apps.take(6).toList();
-    final hasMore = widget.apps.length > 6;
+    late final displayApps = widget.isCompactMode
+        ? widget.apps.take(6).toList()
+        : widget.apps;
+    late final hasMore = displayApps.length > 6 && widget.isCompactMode;
 
     return SingleChildScrollView(
       child: Wrap(
