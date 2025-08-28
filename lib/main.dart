@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logging/logging.dart';
 import 'package:spy_on_your_work/src/app/app.dart';
+import 'package:spy_on_your_work/src/app_info.dart';
 import 'package:spy_on_your_work/src/isar/database.dart';
 import 'package:spy_on_your_work/src/rust/frb_generated.dart';
 import 'package:toastification/toastification.dart';
@@ -11,6 +12,7 @@ import 'package:window_manager/window_manager.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await RustLib.init();
+  await AppInfo.init();
   Logger.root.level = Level.ALL; // defaults to Level.INFO
   Logger.root.onRecord.listen((record) {
     if (kDebugMode) {

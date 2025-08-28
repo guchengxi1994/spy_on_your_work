@@ -1,12 +1,9 @@
-import 'dart:io';
-
 import 'package:isar_community/isar.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:spy_on_your_work/src/common/logger.dart';
 import 'package:spy_on_your_work/src/isar/app_record.dart';
 import 'package:spy_on_your_work/src/isar/app_screenshot_record.dart';
 import 'package:spy_on_your_work/src/isar/apps.dart';
-import 'package:spy_on_your_work/src/rust/api/spy_api.dart' show initSavePath;
 
 /// 应用使用时间段数据结构
 class AppUsageTimeSlot {
@@ -77,9 +74,7 @@ class IsarDatabase {
     }
     final dir = await getApplicationSupportDirectory();
     logger.info("database save to ${dir.path}");
-    final screenDir = "${dir.path}/screen";
-    Directory(screenDir).createSync(recursive: true);
-    initSavePath(path: screenDir);
+
     isar = await Isar.open(schemas, name: "soyw", directory: dir.path);
   }
 

@@ -6,6 +6,7 @@ import 'package:spy_on_your_work/src/app/application/application_notifier.dart';
 import 'package:spy_on_your_work/src/app/application/application_state.dart';
 import 'package:spy_on_your_work/src/app/application/components/application_list_item.dart';
 import 'package:spy_on_your_work/src/app/application/components/stat_card.dart';
+import 'package:spy_on_your_work/src/app_info.dart';
 
 class ApplicationScreen extends ConsumerStatefulWidget {
   const ApplicationScreen({super.key});
@@ -77,7 +78,7 @@ class _ApplicationScreenState extends ConsumerState<ApplicationScreen>
           _buildStatsCards(appState),
           const SizedBox(height: 32),
           const Text(
-            '所有应用',
+            '当前应用',
             style: TextStyle(
               color: Color(0xFF1F2937),
               fontSize: 20,
@@ -86,6 +87,30 @@ class _ApplicationScreenState extends ConsumerState<ApplicationScreen>
           ),
           const SizedBox(height: 16),
           Expanded(child: _buildApplicationsList(appState)),
+          SizedBox(
+            height: 30,
+            child: Center(
+              child: Text.rich(
+                TextSpan(
+                  children: [
+                    TextSpan(
+                      text: MediaQuery.of(context).size.width > 600
+                          ? AppInfo.description
+                          : AppInfo.descriptionShort,
+                      style: TextStyle(color: Color(0xFF1F2937), fontSize: 16),
+                    ),
+                    TextSpan(
+                      text: "  Current version is ${AppInfo.version}",
+                      style: TextStyle(
+                        color: Color.fromARGB(255, 108, 109, 110),
+                        fontSize: 16,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
         ],
       ),
     );

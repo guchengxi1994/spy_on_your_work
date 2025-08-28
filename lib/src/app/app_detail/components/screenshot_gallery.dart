@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:open_file/open_file.dart';
-import 'package:path_provider/path_provider.dart';
+import 'package:spy_on_your_work/src/app_info.dart';
 import 'dart:io';
 
 import 'package:spy_on_your_work/src/isar/app_screenshot_record.dart';
@@ -61,8 +61,7 @@ class _ScreenshotGalleryState extends State<ScreenshotGallery> {
           const Spacer(),
           TextButton.icon(
             onPressed: () async {
-              final dir = await getApplicationSupportDirectory();
-              OpenFile.open("${dir.path}/screen");
+              OpenFile.open(AppInfo.screenshotPath);
             },
             icon: const Icon(Icons.folder_open, size: 16),
             label: const Text('打开截图位置'),
