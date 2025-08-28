@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:spy_on_your_work/src/app/application/application_state.dart';
 import 'package:spy_on_your_work/src/app/application/components/cached_app_icon.dart';
 import 'package:spy_on_your_work/src/isar/apps.dart';
@@ -223,6 +224,9 @@ class _OptimizedCategoryCardState extends State<OptimizedCategoryCard> {
       child: Tooltip(
         message: app.name,
         child: GestureDetector(
+          onDoubleTap: () {
+            context.go('/app-detail/${Uri.encodeComponent(app.name)}');
+          },
           onLongPress: () {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
@@ -322,28 +326,35 @@ class DragSourceArea extends StatelessWidget {
           Wrap(
             spacing: 6,
             runSpacing: 6,
-            children: apps.map((app) => _buildDraggableApp(app)).toList(),
+            children: apps
+                .map((app) => _buildDraggableApp(app, context))
+                .toList(),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildDraggableApp(ApplicationUsage app) {
+  Widget _buildDraggableApp(ApplicationUsage app, BuildContext context) {
     return Draggable<ApplicationUsage>(
       data: app,
       feedback: Material(
         elevation: 8,
         borderRadius: BorderRadius.circular(8),
-        child: Container(
-          width: 48,
-          height: 48,
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: Colors.grey[300]!),
+        child: GestureDetector(
+          onDoubleTap: () {
+            context.go('/app-detail/${Uri.encodeComponent(app.name)}');
+          },
+          child: Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.grey[300]!),
+            ),
+            child: CachedAppIcon(iconData: app.icon, size: 32),
           ),
-          child: CachedAppIcon(iconData: app.icon, size: 32),
         ),
       ),
       childWhenDragging: Container(
