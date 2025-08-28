@@ -1,9 +1,10 @@
+import 'package:spy_on_your_work/src/isar/app_screenshot_record.dart';
 import 'package:spy_on_your_work/src/isar/apps.dart';
 
 /// 应用详细配置状态
 class AppDetailState {
   final IApplication? application;
-  final List<String> screenshots;
+  final List<AppScreenshotRecord> screenshots;
   final List<AnalysisResult> analysisResults;
   final bool isLoading;
   final String? error;
@@ -18,7 +19,7 @@ class AppDetailState {
 
   AppDetailState copyWith({
     IApplication? application,
-    List<String>? screenshots,
+    List<AppScreenshotRecord>? screenshots,
     List<AnalysisResult>? analysisResults,
     bool? isLoading,
     String? error,

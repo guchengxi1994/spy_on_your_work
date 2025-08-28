@@ -7,6 +7,7 @@ import 'package:spy_on_your_work/src/common/logger.dart';
 import 'package:spy_on_your_work/src/isar/app_screenshot_record.dart';
 import 'package:spy_on_your_work/src/isar/apps.dart';
 import 'package:spy_on_your_work/src/isar/database.dart';
+import 'package:spy_on_your_work/src/rust/api/spy_api.dart';
 
 /// 应用详细配置状态管理器Provider
 final appDetailNotifierProvider =
@@ -96,6 +97,13 @@ class AppDetailNotifier
 
       // 更新状态
       ref.invalidateSelf();
+      if (currentState.application != null) {
+        if (screenshotWhenUsing == true) {
+          insertScreenshotApps(v: currentState.application!.name);
+        } else if (screenshotWhenUsing == false) {
+          removeScreenshotApps(v: currentState.application!.name);
+        }
+      }
 
       logger.info('更新应用配置成功: ${application.name}');
     } catch (e, stackTrace) {
@@ -105,17 +113,17 @@ class AppDetailNotifier
   }
 
   /// 加载应用截图
-  Future<List<String>> _loadScreenshots(int appId) async {
+  Future<List<AppScreenshotRecord>> _loadScreenshots(int appId) async {
     try {
       // 从数据库查询截图记录
       final screenshotRecords = await database.getScreenshotsByAppId(appId);
 
       // 过滤出存在的文件路径
-      final List<String> validPaths = [];
+      final List<AppScreenshotRecord> valids = [];
       for (final record in screenshotRecords) {
         final file = File(record.path);
         if (await file.exists()) {
-          validPaths.add(record.path);
+          valids.add(record);
         } else {
           // 文件不存在，从数据库中删除记录
           logger.warning('截图文件不存在，删除数据库记录: ${record.path}');
@@ -123,8 +131,8 @@ class AppDetailNotifier
         }
       }
 
-      logger.info('加载应用ID $appId 的截图数量: ${validPaths.length}');
-      return validPaths;
+      logger.info('加载应用ID $appId 的截图数量: ${valids.length}');
+      return valids;
     } catch (e, stackTrace) {
       logger.severe('加载截图失败: $e', e, stackTrace);
       return [];

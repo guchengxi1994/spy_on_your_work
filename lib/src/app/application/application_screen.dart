@@ -66,7 +66,7 @@ class _ApplicationScreenState extends ConsumerState<ApplicationScreen>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            '概览',
+            '今日概览',
             style: TextStyle(
               color: Color(0xFF1F2937),
               fontSize: 20,
