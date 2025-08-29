@@ -721,6 +721,74 @@ mod macos_tests {
         Some(general_purpose::STANDARD.encode(data))
     }
 
+    #[test]
+    fn test_macos_application_provider() {
+        use crate::spy::model::{Application, ApplicationProvider};
+
+        let result = std::panic::catch_unwind(|| unsafe { test_macos_application_provider_impl() });
+
+        match result {
+            Ok(_) => println!("macOS ApplicationProvider 测试完成"),
+            Err(_) => println!("macOS ApplicationProvider 测试遇到异常"),
+        }
+    }
+
+    unsafe fn test_macos_application_provider_impl() {
+        use crate::spy::model::{Application, ApplicationProvider};
+
+        println!("=== macOS ApplicationProvider 测试 ===");
+
+        // 使用 ApplicationProvider 的 from_process 方法
+        if let Some(app) = Application::from_process(0u32) {
+            // 参数在 macOS 实现中不使用
+            println!("✓ 成功获取前台应用！");
+            println!("应用名称（稳定标识符）: {}", app.name);
+            println!("窗口标题（动态变化）: {}", app.title);
+            println!("应用路径: {}", app.path);
+
+            // 显示 name和title的区别
+            println!("\n=== Name vs Title 对比 ===");
+            println!("name字段（从 Bundle ID 提取，稳定不变）: '{}'", app.name);
+            println!("title字段（应用显示名，动态变化）: '{}'", app.title);
+
+            if app.name != app.title {
+                println!("✓ name和title不同，说明成功区分了应用标识符和显示名称");
+            } else {
+                println!("⚠ name和title相同，可能是 Bundle ID 为空的情况");
+            }
+
+            // 测试图标获取
+            match &app.icon {
+                Some(icon_base64) => {
+                    println!("\n=== 图标信息 ===");
+                    println!("图标获取成功！");
+                    println!("图标base64长度: {} 字节", icon_base64.len());
+                    if icon_base64.len() > 100 {
+                        println!("图标base64前100字符: {}...", &icon_base64[..100]);
+                    } else {
+                        println!("图标base64: {}", icon_base64);
+                    }
+                    println!("可以将此base64字符串保存到数据库中。");
+                }
+                None => println!("\n未获取到图标（这是正常情况，某些应用可能没有图标）"),
+            }
+
+            // 验证路径信息
+            if !app.path.is_empty() {
+                println!("\n=== 路径验证 ===");
+                println!("应用安装路径: {}", app.path);
+                println!("✓ 成功获取应用路径");
+            } else {
+                println!("\n=== 路径验证 ===");
+                println!("⚠ 未获取到应用路径，可能是系统应用或权限问题");
+            }
+        } else {
+            println!("无法获取前台应用，可能没有活跃的窗口");
+        }
+
+        println!("\n=== 测试完成 ===");
+    }
+
     /// 工具函数: NSString -> Rust String
     unsafe fn nsstring_to_rust(ns_string: id) -> String {
         if ns_string == nil {

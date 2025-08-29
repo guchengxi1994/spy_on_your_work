@@ -2,7 +2,7 @@ name: spy_on_your_work
 description: "A new Flutter project."
 publish_to: "none"
 
-version: 2.0.2
+version: 2.1.0
 
 environment:
   sdk: ^3.9.0

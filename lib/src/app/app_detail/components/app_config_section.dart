@@ -1,4 +1,7 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:spy_on_your_work/src/common/toast.dart';
 import 'package:spy_on_your_work/src/isar/apps.dart';
 
 class AppConfigSection extends StatelessWidget {
@@ -28,6 +31,11 @@ class AppConfigSection extends StatelessWidget {
                 subtitle: '启用后会在使用此应用时自动截图',
                 value: application.screenshotWhenUsing,
                 onChanged: (value) {
+                  if (Platform.isMacOS || Platform.isLinux) {
+                    ToastUtils.info(context, title: "截图功能仅支持windows系统");
+                    return;
+                  }
+
                   onConfigChanged(value, application.analyseWhenUsing);
                 },
                 icon: Icons.camera_alt,
@@ -38,6 +46,10 @@ class AppConfigSection extends StatelessWidget {
                 subtitle: '启用后会对应用内容进行智能分析',
                 value: application.analyseWhenUsing,
                 onChanged: (value) {
+                  if (Platform.isMacOS || Platform.isLinux) {
+                    ToastUtils.info(context, title: "分析功能仅支持windows系统");
+                    return;
+                  }
                   onConfigChanged(application.screenshotWhenUsing, value);
                 },
                 icon: Icons.analytics,

@@ -57,4 +57,32 @@ pub fn start_spy() {
 pub fn start_spy() {}
 
 #[cfg(target_os = "macos")]
-pub fn start_spy() {}
+pub fn start_spy() {
+    {
+        let spy_on = SPY_ON.read().unwrap();
+        if *spy_on {
+            println!("Spy already started");
+            return;
+        }
+    }
+
+    std::thread::spawn(move || {
+        // set spy on
+        {
+            *SPY_ON.write().unwrap() = true;
+        }
+
+        loop {
+            use crate::spy::model::ApplicationProvider;
+
+            let app = Application::from_process(1);
+            if app.is_none() {
+                println!("没有找到应用");
+                continue;
+            }
+            send_application_message(app.unwrap());
+
+            std::thread::sleep(std::time::Duration::from_secs(SLEEP_SECS));
+        }
+    });
+}
