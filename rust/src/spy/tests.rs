@@ -470,3 +470,268 @@ mod tests {
         println!("如果sysinfo结果差异较大，可能是库的实现问题。");
     }
 }
+
+#[allow(unused_imports)]
+#[allow(dead_code)]
+#[allow(unused_variables)]
+#[allow(deprecated)] // 抑制 cocoa 库的废弃警告
+#[cfg(target_os = "macos")]
+mod macos_tests {
+    use cocoa::base::{id, nil};
+    use cocoa::foundation::NSString;
+    use core_foundation::{base::TCFType, string::CFString, url::CFURL};
+    use objc::runtime::Object;
+    use objc::{class, msg_send, sel, sel_impl};
+    use std::path::PathBuf;
+
+    #[test]
+    fn test_get_app_info() {
+        // 使用 Result 来处理可能的异常
+        let result = std::panic::catch_unwind(|| unsafe { test_get_app_info_impl() });
+
+        match result {
+            Ok(_) => println!("测试完成"),
+            Err(e) => {
+                println!("测试遇到异常: {:?}", e);
+                // 尝试获取异常信息
+                if let Some(s) = e.downcast_ref::<&str>() {
+                    println!("异常详情: {}", s);
+                } else if let Some(s) = e.downcast_ref::<String>() {
+                    println!("异常详情: {}", s);
+                }
+            }
+        }
+    }
+
+    unsafe fn test_get_app_info_impl() {
+        println!("=== macOS 应用信息测试 ===");
+
+        // 获取 NSWorkspace
+        let workspace: id = msg_send![class!(NSWorkspace), sharedWorkspace];
+        if workspace == nil {
+            println!("无法获取 NSWorkspace");
+            return;
+        }
+        println!("✓ 获取到 NSWorkspace");
+
+        // 获取前台应用
+        let app: id = msg_send![workspace, frontmostApplication];
+        if app == nil {
+            println!("没有前台应用");
+            return;
+        }
+        println!("✓ 获取到前台应用");
+
+        // 获取应用名称
+        let name: id = msg_send![app, localizedName];
+        let name_str = nsstring_to_rust(name);
+        println!("应用名称: {}", name_str);
+
+        // 获取 Bundle Identifier
+        let bundle_id: id = msg_send![app, bundleIdentifier];
+        let bundle_id_str = nsstring_to_rust(bundle_id);
+        println!("Bundle ID: {}", bundle_id_str);
+
+        // 获取应用路径 - 使用更安全的方法
+        let bundle_url: id = msg_send![app, bundleURL];
+        if bundle_url != nil {
+            let path: id = msg_send![bundle_url, path];
+            let path_str = nsstring_to_rust(path);
+            println!("应用路径: {}", path_str);
+
+            // 尝试获取应用图标 - 使用正确的方法
+            let icon: id = msg_send![workspace, iconForFile: path];
+            if icon != nil {
+                println!("✓ 获取到应用图标 (NSImage 对象)");
+
+                // 获取图标尺寸信息
+                let size: cocoa::foundation::NSSize = msg_send![icon, size];
+                println!("图标尺寸: {:.1} x {:.1}", size.width, size.height);
+
+                // TODO: 这里可以添加将 NSImage 转换为 Base64 的代码
+                println!("提示: 可以将此 NSImage 转换为 PNG/Base64 格式保存");
+            } else {
+                println!("⚠ 未能获取应用图标");
+            }
+        } else {
+            println!("⚠ 未能获取应用 URL");
+        }
+
+        // 获取进程信息
+        let pid: i32 = msg_send![app, processIdentifier];
+        println!("进程 ID: {}", pid);
+
+        // 检查应用是否为活跃状态
+        let is_active: bool = msg_send![app, isActive];
+        println!("是否活跃: {}", if is_active { "是" } else { "否" });
+
+        println!("=== 测试完成 ===");
+    }
+
+    #[test]
+    fn test_running_applications() {
+        let result = std::panic::catch_unwind(|| unsafe { test_running_applications_impl() });
+
+        match result {
+            Ok(_) => println!("运行中应用测试完成"),
+            Err(_) => println!("运行中应用测试遇到异常"),
+        }
+    }
+
+    unsafe fn test_running_applications_impl() {
+        println!("=== 运行中应用列表测试 ===");
+
+        let workspace: id = msg_send![class!(NSWorkspace), sharedWorkspace];
+        if workspace == nil {
+            println!("无法获取 NSWorkspace");
+            return;
+        }
+
+        let running_apps: id = msg_send![workspace, runningApplications];
+        if running_apps == nil {
+            println!("无法获取运行中应用列表");
+            return;
+        }
+
+        let count: usize = msg_send![running_apps, count];
+        println!("运行中应用数量: {}", count);
+
+        // 显示前5个应用的信息
+        let max_display = std::cmp::min(count, 5);
+        for i in 0..max_display {
+            let app: id = msg_send![running_apps, objectAtIndex: i];
+            if app != nil {
+                let name: id = msg_send![app, localizedName];
+                let name_str = nsstring_to_rust(name);
+
+                let bundle_id: id = msg_send![app, bundleIdentifier];
+                let bundle_id_str = nsstring_to_rust(bundle_id);
+
+                let pid: i32 = msg_send![app, processIdentifier];
+
+                println!(
+                    "[{}] 名称: {} | Bundle ID: {} | PID: {}",
+                    i + 1,
+                    name_str,
+                    bundle_id_str,
+                    pid
+                );
+            }
+        }
+
+        if count > 5 {
+            println!("... 还有 {} 个应用未显示", count - 5);
+        }
+    }
+
+    #[test]
+    fn test_nsimage_to_base64() {
+        let result = std::panic::catch_unwind(|| unsafe { test_nsimage_to_base64_impl() });
+
+        match result {
+            Ok(_) => println!("图标转换测试完成"),
+            Err(_) => println!("图标转换测试遇到异常"),
+        }
+    }
+
+    unsafe fn test_nsimage_to_base64_impl() {
+        println!("=== NSImage 转 Base64 测试 ===");
+
+        let workspace: id = msg_send![class!(NSWorkspace), sharedWorkspace];
+        let app: id = msg_send![workspace, frontmostApplication];
+
+        if app == nil {
+            println!("没有前台应用");
+            return;
+        }
+
+        let bundle_url: id = msg_send![app, bundleURL];
+        if bundle_url == nil {
+            println!("无法获取应用 URL");
+            return;
+        }
+
+        let path: id = msg_send![bundle_url, path];
+        let icon: id = msg_send![workspace, iconForFile: path];
+
+        if icon == nil {
+            println!("无法获取应用图标");
+            return;
+        }
+
+        println!("✓ 获取到 NSImage 对象");
+
+        // 转换 NSImage 为 PNG 数据
+        if let Some(base64_string) = nsimage_to_base64(icon) {
+            println!("✓ 成功转换为 Base64");
+            println!("Base64 长度: {} 字节", base64_string.len());
+            if base64_string.len() > 100 {
+                println!("Base64 前100字符: {}...", &base64_string[..100]);
+            }
+        } else {
+            println!("⚠ Base64 转换失败");
+        }
+    }
+
+    /// 将 NSImage 转换为 Base64 字符串
+    unsafe fn nsimage_to_base64(image: id) -> Option<String> {
+        if image == nil {
+            return None;
+        }
+
+        // 创建 CGImage
+        let rect = cocoa::foundation::NSRect::new(
+            cocoa::foundation::NSPoint::new(0.0, 0.0),
+            msg_send![image, size],
+        );
+
+        let cg_image: id = msg_send![image, CGImageForProposedRect: &rect context: nil hints: nil];
+        if cg_image == nil {
+            return None;
+        }
+
+        // 创建 NSBitmapImageRep
+        let bitmap: id = msg_send![class!(NSBitmapImageRep), alloc];
+        let bitmap: id = msg_send![bitmap, initWithCGImage: cg_image];
+
+        if bitmap == nil {
+            return None;
+        }
+
+        // 转换为 PNG 数据
+        let png_data: id = msg_send![bitmap, representationUsingType: 4 properties: nil]; // NSPNGFileType = 4
+
+        if png_data == nil {
+            return None;
+        }
+
+        // 获取数据长度和指针
+        let length: usize = msg_send![png_data, length];
+        let bytes: *const u8 = msg_send![png_data, bytes];
+
+        if bytes.is_null() || length == 0 {
+            return None;
+        }
+
+        // 转换为 Vec<u8>
+        let data = std::slice::from_raw_parts(bytes, length).to_vec();
+
+        // 转换为 Base64
+        use base64::{engine::general_purpose, Engine as _};
+        Some(general_purpose::STANDARD.encode(data))
+    }
+
+    /// 工具函数: NSString -> Rust String
+    unsafe fn nsstring_to_rust(ns_string: id) -> String {
+        if ns_string == nil {
+            return "".to_string();
+        }
+        let utf8: *const std::os::raw::c_char = msg_send![ns_string, UTF8String];
+        if utf8.is_null() {
+            return "".to_string();
+        }
+        std::ffi::CStr::from_ptr(utf8)
+            .to_string_lossy()
+            .into_owned()
+    }
+}

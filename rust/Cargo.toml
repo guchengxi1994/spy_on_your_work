@@ -8,9 +8,7 @@ crate-type = ["cdylib", "staticlib"]
 
 # 仅 Windows 需要的依赖
 [target.'cfg(target_os = "windows")'.dependencies]
-[dependencies.windows]
-version = "0.61.3"
-features = [
+windows = { version = "0.61.3", features = [
     "Globalization",
     "Media_Ocr",
     "Graphics_Imaging",
@@ -24,7 +22,14 @@ features = [
     "Win32_System_SystemInformation",
     "Win32_System_Performance",
     "Win32_UI_WindowsAndMessaging",
-]
+] }
+
+# 仅 macOS 需要的依赖
+[target.'cfg(target_os = "macos")'.dependencies]
+cocoa = "0.26.1"
+objc = "0.2.7"
+core-foundation = "0.10.1"
+
 
 [dependencies]
 anyhow = "1.0.99"
